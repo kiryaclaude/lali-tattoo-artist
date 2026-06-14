@@ -9,9 +9,9 @@ RUN npm run build
 # --- Runtime stage ---
 FROM node:20-alpine
 WORKDIR /app
-RUN npm install -g serve@14
 COPY --from=build /app/dist ./dist
-# serve сам читает $PORT (Railway задаёт его) и слушает на 0.0.0.0 (*)
+COPY server.js ./
 ENV PORT=3000
 EXPOSE 3000
-CMD ["serve", "-s", "dist"]
+# Свой статический сервер: слушает 0.0.0.0:$PORT, SPA-фолбэк на index.html
+CMD ["node", "server.js"]
