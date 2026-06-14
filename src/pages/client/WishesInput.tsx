@@ -11,6 +11,7 @@ import { useNav } from '../../hooks';
 import { getPrevFormStepPath, CLIENT_ROUTES } from '../../routes';
 import { useAppStore, useNotification } from '../../store';
 import { orderService } from '../../services';
+import { compressImageToDataUrl } from '../../utils';
 
 export const WishesInput: React.FC = () => {
   const form = useForm();
@@ -24,6 +25,16 @@ export const WishesInput: React.FC = () => {
     setLoading(true);
 
     try {
+      // Сжимаем эскиз в data URL, чтобы мастер его увидел
+      let sketchUrl = '';
+      if (form.sketch) {
+        try {
+          sketchUrl = await compressImageToDataUrl(form.sketch);
+        } catch {
+          sketchUrl = '';
+        }
+      }
+
       // clientId и проверку лимита делает сервер по Telegram initData
       const orderData = {
         clientName: form.clientName,
@@ -31,7 +42,7 @@ export const WishesInput: React.FC = () => {
         clientAge: form.clientAge!,
         placement: form.placement!,
         size: form.size!,
-        sketchUrl: 'mock-sketch-url',
+        sketchUrl,
         health: {
           contraindications: form.contraindications,
           otherHealth: form.otherHealth,

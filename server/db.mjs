@@ -49,6 +49,10 @@ export async function initSchema() {
       updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
+  // Доп. поля (на случай, если таблица уже создана старой схемой)
+  await pool.query(
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_proof_url TEXT;`
+  );
   await pool.query(
     `CREATE INDEX IF NOT EXISTS idx_orders_client ON orders(client_id);`
   );
@@ -76,6 +80,7 @@ function rowToOrder(r) {
     masterFeedback: r.master_feedback || undefined,
     totalPrice: r.total_price || undefined,
     prepayment: r.prepayment || undefined,
+    paymentProofUrl: r.payment_proof_url || undefined,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -175,6 +180,26 @@ export async function clarifyOrder(id, message) {
     `UPDATE orders SET status = 'awaiting_price', master_feedback = $2,
        updated_at = now() WHERE id = $1 RETURNING *`,
     [id, message]
+  );
+  return rowToOrder(rows[0]);
+}
+
+/** Клиент загрузил чек об оплате → статус payment_pending. */
+export async function setReceipt(id, dataUrl) {
+  const { rows } = await pool.query(
+    `UPDATE orders SET payment_proof_url = $2, status = 'payment_pending',
+       updated_at = now() WHERE id = $1 RETURNING *`,
+    [id, dataUrl]
+  );
+  return rowToOrder(rows[0]);
+}
+
+/** Мастер подтвердил запись → статус confirmed. */
+export async function confirmOrder(id) {
+  const { rows } = await pool.query(
+    `UPDATE orders SET status = 'confirmed', updated_at = now()
+     WHERE id = $1 RETURNING *`,
+    [id]
   );
   return rowToOrder(rows[0]);
 }

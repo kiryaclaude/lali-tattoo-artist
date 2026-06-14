@@ -58,6 +58,7 @@ import {
   ExperienceSelect,
   WishesInput,
   SuccessScreen,
+  ClientOrderDetails,
 } from './pages/client';
 
 // Master Pages
@@ -176,6 +177,14 @@ const App: React.FC = () => {
               element={
                 <ClientLayout>
                   <SuccessScreen />
+                </ClientLayout>
+              }
+            />
+            <Route
+              path={CLIENT_ROUTES.ORDER_DETAIL}
+              element={
+                <ClientLayout>
+                  <ClientOrderDetails />
                 </ClientLayout>
               }
             />

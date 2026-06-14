@@ -36,7 +36,7 @@ const SketchThumb: React.FC<{ url?: string; className?: string }> = ({
   className,
 }) => {
   const [err, setErr] = useState(false);
-  const showImg = !!url && !err && /^https?:\/\//.test(url);
+  const showImg = !!url && !err && /^(https?:|data:)/.test(url);
   return (
     <div
       className={`bg-card-2 rounded-xl flex items-center justify-center overflow-hidden ${

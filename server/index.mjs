@@ -24,7 +24,7 @@ const newId = () =>
 const fmtPrice = (p) => (p ? `${p.amount.toLocaleString('ru-RU')} ₽` : '');
 
 const app = express();
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '6mb' })); // запас под изображения (эскиз/чек)
 
 // ---- Auth: читаем Telegram initData из заголовка ----
 function auth(req, res, next) {
@@ -141,6 +141,45 @@ app.get('/api/orders/active-count', auth, async (req, res) => {
   }
 });
 
+// Одна заявка (владелец или мастер) — для просмотра деталей
+app.get('/api/orders/:id', auth, async (req, res) => {
+  try {
+    const order = await db.getOrder(req.params.id);
+    if (!order) return res.status(404).json({ success: false, error: 'not_found' });
+    if (String(order.clientId) !== String(req.user.id) && !isMaster(req.user.id)) {
+      return res.status(403).json({ success: false, error: 'forbidden' });
+    }
+    ok(res, order);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'server_error' });
+  }
+});
+
+// Клиент загружает чек об оплате
+app.post('/api/orders/:id/receipt', auth, async (req, res) => {
+  try {
+    const order = await db.getOrder(req.params.id);
+    if (!order) return res.status(404).json({ success: false, error: 'not_found' });
+    if (String(order.clientId) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, error: 'forbidden' });
+    }
+    const dataUrl = req.body?.dataUrl;
+    if (!dataUrl || typeof dataUrl !== 'string') {
+      return res.status(400).json({ success: false, error: 'no_file' });
+    }
+    const updated = await db.setReceipt(req.params.id, dataUrl);
+    const note =
+      `🧾 <b>Клиент оплатил</b>\n${updated.clientName || 'Клиент'} прислал чек по заявке ` +
+      `${updated.placement} · ${updated.size.width}×${updated.size.height} см`;
+    for (const mid of MASTER_IDS) sendMessage(mid, note);
+    ok(res, updated);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'server_error' });
+  }
+});
+
 // ============================ MASTER ============================
 
 // Все заявки
@@ -206,6 +245,22 @@ app.post('/api/orders/:id/reject', auth, requireMaster, async (req, res) => {
     sendMessage(
       order.clientId,
       `К сожалению, ваша заявка отклонена.\n${reason}`
+    );
+    ok(res, order);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'server_error' });
+  }
+});
+
+// Подтвердить запись (после оплаты)
+app.post('/api/orders/:id/confirm', auth, requireMaster, async (req, res) => {
+  try {
+    const order = await db.confirmOrder(req.params.id);
+    if (!order) return res.status(404).json({ success: false, error: 'not_found' });
+    sendMessage(
+      order.clientId,
+      `✅ <b>Запись подтверждена!</b>\nМастер ждёт вас. Спасибо!`
     );
     ok(res, order);
   } catch (e) {

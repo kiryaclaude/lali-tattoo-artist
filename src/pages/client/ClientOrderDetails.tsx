@@ -1,0 +1,254 @@
+/**
+ * pages/client/ClientOrderDetails.tsx
+ * Просмотр клиентом своей заявки: что отправил + оплата (реквизиты, чек).
+ */
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useNav } from '../../hooks';
+import { orderService } from '../../services';
+import { useNotification } from '../../store';
+import { Card, Button, LoadingSpinner } from '../../components/ui';
+import { FileUpload } from '../../components/forms';
+import {
+  formatPlacement,
+  formatSize,
+  formatPrice,
+  formatTimeAgo,
+  compressImageToDataUrl,
+} from '../../utils';
+import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
+import { CLIENT_ROUTES } from '../../routes';
+import type { Order } from '../../types';
+
+export const ClientOrderDetails: React.FC = () => {
+  const { orderId } = useParams<{ orderId: string }>();
+  const { navigate } = useNav();
+  const notify = useNotification();
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+
+  const load = async () => {
+    if (!orderId) return;
+    const res = await orderService.getOrder(orderId);
+    if (res.success && res.data) setOrder(res.data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
+
+  const handleReceipt = async (file: File | null) => {
+    if (!file || !orderId) return;
+    setUploading(true);
+    try {
+      const dataUrl = await compressImageToDataUrl(file, 1200, 0.6);
+      const res = await orderService.uploadReceipt(orderId, dataUrl);
+      if (res.success && res.data) {
+        setOrder(res.data);
+        notify.success('Чек отправлен мастеру');
+      } else {
+        notify.error('Не удалось отправить чек');
+      }
+    } catch {
+      notify.error('Ошибка при загрузке чека');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Загрузка..." />
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-4">
+        <p className="text-muted">Заявка не найдена</p>
+        <Button variant="secondary" onClick={() => navigate(CLIENT_ROUTES.HOME)}>
+          На главную
+        </Button>
+      </div>
+    );
+  }
+
+  const sketchIsImg = !!order.sketchUrl && /^(https?:|data:)/.test(order.sketchUrl);
+  const hasPrice = !!order.totalPrice;
+  const isPriceSet = order.status === 'price_set';
+  const isPaying = order.status === 'payment_pending';
+  const isConfirmed = order.status === 'confirmed';
+
+  return (
+    <div className="flex-1 flex flex-col space-y-5 pb-6">
+      {/* Назад */}
+      <button
+        onClick={() => navigate(CLIENT_ROUTES.HOME)}
+        className="inline-flex items-center gap-1 text-brand font-medium text-sm self-start"
+      >
+        ‹ На главную
+      </button>
+
+      {/* Заголовок */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-white">Ваша заявка</h1>
+          <p className="text-xs text-muted mt-1">
+            {formatTimeAgo(new Date(order.createdAt))}
+          </p>
+        </div>
+        <span
+          className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+            ORDER_STATUS_COLORS[order.status] || ''
+          }`}
+        >
+          {ORDER_STATUS_LABELS[order.status] || order.status}
+        </span>
+      </div>
+
+      {/* Эскиз */}
+      <div className="w-full aspect-[4/3] rounded-2xl border border-line bg-card-2 overflow-hidden flex items-center justify-center">
+        {sketchIsImg ? (
+          <img
+            src={order.sketchUrl}
+            alt="Эскиз"
+            className="w-full h-full object-contain"
+          />
+        ) : (
+          <span className="text-xs text-hint">Эскиз не приложен</span>
+        )}
+      </div>
+
+      {/* Параметры */}
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { label: 'Расположение', value: formatPlacement(order.placement) },
+          { label: 'Размер', value: formatSize(order.size.height, order.size.width) },
+          { label: 'Возраст', value: `${order.clientAge} лет` },
+          {
+            label: 'Опыт',
+            value: order.experience?.hasTattoos
+              ? `${order.experience.tattooCount || 1} тату`
+              : 'Первая',
+          },
+        ].map((it) => (
+          <Card key={it.label}>
+            <p className="text-xs font-semibold text-muted uppercase mb-1">
+              {it.label}
+            </p>
+            <p className="text-lg font-bold text-white break-words">{it.value}</p>
+          </Card>
+        ))}
+      </div>
+
+      {/* Пожелания */}
+      {order.wishes && (
+        <Card>
+          <p className="text-xs font-semibold text-muted uppercase mb-2">
+            Ваши пожелания
+          </p>
+          <p className="text-white whitespace-pre-wrap break-words">
+            {order.wishes}
+          </p>
+        </Card>
+      )}
+
+      {/* Ответ мастера */}
+      {order.masterFeedback && (
+        <Card>
+          <p className="text-xs font-semibold text-muted uppercase mb-2">
+            {order.status === 'rejected' ? 'Причина отклонения' : 'Сообщение мастера'}
+          </p>
+          <p className="text-white whitespace-pre-wrap break-words">
+            {order.masterFeedback}
+          </p>
+        </Card>
+      )}
+
+      {/* Стоимость + оплата */}
+      {hasPrice && (
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-xs font-semibold text-muted uppercase mb-1">
+                Стоимость
+              </p>
+              <p className="text-xl font-bold text-white">
+                {formatPrice(order.totalPrice!.amount, order.totalPrice!.currency)}
+              </p>
+            </div>
+            {order.prepayment && (
+              <div className="text-right">
+                <p className="text-xs font-semibold text-muted uppercase mb-1">
+                  Предоплата
+                </p>
+                <p className="text-lg font-bold text-brand">
+                  {formatPrice(order.prepayment.amount, order.prepayment.currency)}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Реквизиты (пока пустые — мастер сообщит) */}
+          <div className="rounded-xl bg-card-2 border border-line p-4">
+            <p className="text-xs font-semibold text-muted uppercase mb-1">
+              Реквизиты для оплаты
+            </p>
+            <p className="text-sm text-hint">
+              Реквизиты уточняйте у мастера.
+            </p>
+          </div>
+        </Card>
+      )}
+
+      {/* Загрузка чека / статус оплаты */}
+      {isPriceSet && (
+        <Card>
+          <p className="text-xs font-semibold text-muted uppercase mb-3">
+            Чек об оплате
+          </p>
+          {uploading ? (
+            <LoadingSpinner size="md" text="Отправляем чек..." />
+          ) : (
+            <FileUpload
+              accept="image/jpeg,image/png,image/webp"
+              onFileSelect={handleReceipt}
+              file={null}
+            />
+          )}
+        </Card>
+      )}
+
+      {isPaying && (
+        <Card>
+          <p className="text-sm text-white mb-3">
+            ✅ Чек отправлен. Ожидайте подтверждения от мастера.
+          </p>
+          {order.paymentProofUrl && (
+            <img
+              src={order.paymentProofUrl}
+              alt="Чек"
+              className="w-full max-h-64 object-contain rounded-xl border border-line"
+            />
+          )}
+        </Card>
+      )}
+
+      {isConfirmed && (
+        <Card className="text-center">
+          <p className="text-base font-semibold text-brand">
+            ✅ Запись подтверждена
+          </p>
+          <p className="text-sm text-muted mt-1">
+            Мастер ждёт вас. Спасибо!
+          </p>
+        </Card>
+      )}
+    </div>
+  );
+};

@@ -24,9 +24,27 @@ class OrderService {
     return apiGet<{ count: number }>('/orders/active-count');
   }
 
+  /** Одна заявка по id (владелец или мастер). */
+  async getOrder(orderId: string): Promise<ApiResponse<Order>> {
+    return apiGet<Order>(`/orders/${orderId}`);
+  }
+
+  /** Клиент загружает чек об оплате (data URL изображения). */
+  async uploadReceipt(
+    orderId: string,
+    dataUrl: string
+  ): Promise<ApiResponse<Order>> {
+    return apiPost<Order>(`/orders/${orderId}/receipt`, { dataUrl });
+  }
+
   /** Все заявки (для мастера). */
   async getMasterOrders(): Promise<ApiResponse<Order[]>> {
     return apiGet<Order[]>('/orders');
+  }
+
+  /** Мастер подтверждает запись после оплаты. */
+  async confirmOrder(orderId: string): Promise<ApiResponse<Order>> {
+    return apiPost<Order>(`/orders/${orderId}/confirm`, {});
   }
 
   /** Назначить стоимость. */

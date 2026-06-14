@@ -90,9 +90,12 @@ export const ClientHome: React.FC = () => {
               Мои заявки
             </p>
             {orders.map((o) => (
-              <div
+              <button
                 key={o.id}
-                className="flex items-center justify-between gap-3 rounded-2xl bg-card/80 backdrop-blur border border-line px-4 py-3"
+                onClick={() =>
+                  navigate(CLIENT_ROUTES.ORDER_DETAIL.replace(':orderId', o.id))
+                }
+                className="w-full text-left flex items-center justify-between gap-3 rounded-2xl bg-card/80 backdrop-blur border border-line px-4 py-3 hover:bg-card transition-colors"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-white truncate">
@@ -110,7 +113,7 @@ export const ClientHome: React.FC = () => {
                 >
                   {ORDER_STATUS_LABELS[o.status] || o.status}
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         )}

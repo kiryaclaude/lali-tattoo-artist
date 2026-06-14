@@ -130,10 +130,27 @@ export const MasterOrderDetails: React.FC = () => {
     }
   };
 
-  const showImg = !!order.sketchUrl && !sketchErr && /^https?:\/\//.test(order.sketchUrl);
+  const handleConfirm = async () => {
+    setIsSubmitting(true);
+    try {
+      const res = await orderService.confirmOrder(orderId);
+      if (res.success) {
+        updateOrderStatus(orderId, 'confirmed');
+        notify.success('Запись подтверждена');
+        goBack();
+      }
+    } catch {
+      notify.error('Ошибка при подтверждении');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const showImg = !!order.sketchUrl && !sketchErr && /^(https?:|data:)/.test(order.sketchUrl);
   const wishes = order.wishes || '';
   const wishesLong = wishes.length > WISHES_CLAMP;
   const isPending = order.status === 'pending';
+  const isPaying = order.status === 'payment_pending';
 
   return (
     <div className="space-y-5 max-w-3xl mx-auto pb-6">
@@ -231,6 +248,20 @@ export const MasterOrderDetails: React.FC = () => {
         </Card>
       )}
 
+      {/* Чек об оплате (если клиент прислал) */}
+      {order.paymentProofUrl && (
+        <Card>
+          <p className="text-xs font-semibold text-muted uppercase mb-2">
+            Чек об оплате
+          </p>
+          <img
+            src={order.paymentProofUrl}
+            alt="Чек"
+            className="w-full max-h-72 object-contain rounded-xl border border-line"
+          />
+        </Card>
+      )}
+
       {/* Пожелания (сворачиваемые) */}
       {wishes && (
         <Card>
@@ -281,6 +312,20 @@ export const MasterOrderDetails: React.FC = () => {
               Отклонить
             </Button>
           </div>
+        </div>
+      ) : isPaying ? (
+        <div className="space-y-3">
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={handleConfirm}
+            isLoading={isSubmitting}
+          >
+            Подтвердить запись
+          </Button>
+          <Button variant="secondary" fullWidth onClick={goBack}>
+            ‹ Вернуться к заявкам
+          </Button>
         </div>
       ) : (
         <Button variant="secondary" fullWidth onClick={goBack}>

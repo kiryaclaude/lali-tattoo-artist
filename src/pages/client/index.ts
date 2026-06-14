@@ -12,3 +12,4 @@ export { HealthSelect } from './HealthSelect';
 export { ExperienceSelect } from './ExperienceSelect';
 export { WishesInput } from './WishesInput';
 export { SuccessScreen } from './SuccessScreen';
+export { ClientOrderDetails } from './ClientOrderDetails';
