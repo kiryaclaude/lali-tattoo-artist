@@ -54,9 +54,16 @@ function requireMaster(req, res, next) {
 const ok = (res, data) => res.json({ success: true, data });
 
 // ---- Health ----
-app.get('/api/health', (_req, res) =>
-  res.json({ ok: true, bot: hasBotToken() })
-);
+app.get('/api/health', async (_req, res) => {
+  let dbOk = false;
+  try {
+    await db.pool.query('SELECT 1');
+    dbOk = true;
+  } catch {
+    dbOk = false;
+  }
+  res.json({ ok: true, bot: hasBotToken(), db: dbOk });
+});
 
 // ---- Кто я (роль) ----
 app.get('/api/me', auth, (req, res) =>
