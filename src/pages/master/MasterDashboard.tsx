@@ -6,7 +6,6 @@
 import React, { useEffect } from 'react';
 import { useMasterStore, useFilteredOrders } from '../../store';
 import { orderService } from '../../services';
-import { useAppStore } from '../../store';
 import { useNav } from '../../hooks';
 import { LoadingSpinner, Card, Badge } from '../../components/ui';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';

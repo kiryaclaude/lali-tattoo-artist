@@ -3,7 +3,7 @@
  * Управление Telegram пользователем
  */
 
-import type { TelegramUser, TelegramWebAppInitData } from '../../types';
+import type { TelegramUser, TelegramWebAppInitData } from '../types';
 import { getTgApp } from './telegram_init';
 
 /**

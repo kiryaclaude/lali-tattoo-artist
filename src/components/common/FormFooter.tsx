@@ -22,14 +22,14 @@ interface FormFooterProps {
 
 export const FormFooter: React.FC<FormFooterProps> = ({
   onNext,
-  onPrev,
+  onPrev: _onPrev,
   onSubmit,
   nextLabel = 'Далее',
-  prevLabel = 'Назад',
+  prevLabel: _prevLabel = 'Назад',
   submitLabel = 'Отправить',
   isNextDisabled = false,
   isNextLoading = false,
-  showPrev = true,
+  showPrev: _showPrev = true,
   showNext = true,
   showSubmit = false,
 }) => {

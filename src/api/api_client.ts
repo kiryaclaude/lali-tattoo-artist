@@ -4,7 +4,7 @@
  * TODO Backend: Заменить mock реализацию на реальные API вызовы
  */
 
-import type { ApiResponse, ApiListResponse } from '../types';
+import type { ApiResponse } from '../types';
 import { API_TIMEOUT } from '../constants';
 
 // ============================================================================

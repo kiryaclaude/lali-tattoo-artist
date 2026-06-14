@@ -3,7 +3,6 @@
  * Функции валидации
  */
 
-import type { File as TFile } from 'react';
 import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from '../constants';
 import type { ValidationError, FormValidationResult } from '../types';
 import { LEGAL_AGE } from '../constants';

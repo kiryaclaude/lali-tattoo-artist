@@ -3,7 +3,7 @@
  * Константы для заказов
  */
 
-import type { TattooPlacement } from '../types_order';
+import type { TattooPlacement } from '../types';
 
 // ============================================================================
 // PLACEMENT OPTIONS

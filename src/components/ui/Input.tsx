@@ -27,8 +27,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       'focus:outline-none focus:border-brand',
       'bg-card text-white placeholder-hint',
       error ? 'border-red-500/70' : 'border-transparent',
-      icon && !multiline && 'pl-11',
-      multiline && 'resize-none leading-relaxed',
+      icon && !multiline ? 'pl-11' : false,
+      multiline ? 'resize-none leading-relaxed' : false,
       className
     );
 

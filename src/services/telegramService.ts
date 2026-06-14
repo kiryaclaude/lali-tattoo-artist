@@ -3,8 +3,8 @@
  * Фронтенд часть (backend часть будет добавлена позже)
  */
 
-import { getTelegramWebApp, isTelegramWebApp } from './utils';
-import { TelegramUser, TelegramWebAppInitData } from './types';
+import { getTelegramWebApp, isTelegramWebApp } from '../utils';
+import { TelegramUser, TelegramWebAppInitData } from '../types';
 
 // ============================================================================
 // TYPES

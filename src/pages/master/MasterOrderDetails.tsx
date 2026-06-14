@@ -10,7 +10,7 @@ import { orderService } from '../../services';
 import { Button, Card, Badge, Modal, Input, LoadingSpinner } from '../../components/ui';
 import { NumberInput } from '../../components/forms';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
-import { formatPrice, formatPlacement, formatSize } from '../../utils';
+import { formatPlacement, formatSize } from '../../utils';
 import { useNotification } from '../../store';
 import { MASTER_ROUTES } from '../../routes';
 

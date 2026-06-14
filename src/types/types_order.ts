@@ -52,7 +52,7 @@ export interface HealthInfo {
 
 export interface ExperienceInfo {
   hasTattoos: boolean;
-  tattooCount?: number;
+  tattooCount?: number | null;
 }
 
 // ============================================================================
