@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "start": "node server.js",
+    "start": "node server.mjs",
     "type-check": "tsc --noEmit",
     "lint": "echo 'Add eslint when needed'"
   },
