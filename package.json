@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "start": "serve -s dist -l ${PORT:-3000}",
+    "start": "serve -s dist",
     "type-check": "tsc --noEmit",
     "lint": "echo 'Add eslint when needed'"
   },
