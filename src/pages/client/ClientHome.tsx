@@ -9,7 +9,6 @@ import {
   hideMainButton,
   hideBackButton,
   selectionHaptic,
-  getClientId,
   orderService,
 } from '../../services';
 import { CLIENT_ROUTES } from '../../routes';
@@ -35,10 +34,10 @@ export const ClientHome: React.FC = () => {
     hideMainButton();
   }, []);
 
-  // Загружаем заявки клиента
+  // Загружаем заявки клиента с сервера
   useEffect(() => {
     let alive = true;
-    orderService.getClientOrders(getClientId()).then((res) => {
+    orderService.getClientOrders().then((res) => {
       if (alive && res.success && res.data) {
         setOrders(res.data);
       }

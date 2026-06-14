@@ -10,7 +10,6 @@ import { useNav } from '../../hooks';
 import { LoadingSpinner, Modal, Button, Input } from '../../components/ui';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
 import { formatTimeAgo, formatSize, formatPlacement } from '../../utils';
-import { seedMasterDashboard } from '../../api/mock';
 import { MASTER_ROUTES } from '../../routes';
 
 const FILTERS: { key: string | null; label: string }[] = [
@@ -87,10 +86,9 @@ export const MasterDashboard: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       setLoadingOrders(true);
-      seedMasterDashboard();
       try {
         const res = await orderService.getMasterOrders(); // все статусы
-        if (res.success) setOrders(res.data);
+        if (res.success && res.data) setOrders(res.data);
       } catch (e) {
         console.error('Failed to load orders:', e);
       } finally {
@@ -120,14 +118,25 @@ export const MasterDashboard: React.FC = () => {
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  const handleBroadcast = () => {
+  const [broadcasting, setBroadcasting] = useState(false);
+  const handleBroadcast = async () => {
     if (!broadcastText.trim()) {
       notify.error('Введите текст рассылки');
       return;
     }
-    notify.info('Рассылка заработает после подключения backend-бота');
-    setBroadcastOpen(false);
-    setBroadcastText('');
+    setBroadcasting(true);
+    try {
+      const res = await orderService.broadcast(broadcastText.trim());
+      if (res.success && res.data) {
+        notify.success(`Рассылка отправлена: ${res.data.sent} из ${res.data.total}`);
+        setBroadcastOpen(false);
+        setBroadcastText('');
+      } else {
+        notify.error(res.error?.message || 'Не удалось отправить рассылку');
+      }
+    } finally {
+      setBroadcasting(false);
+    }
   };
 
   if (isLoading) {
@@ -236,7 +245,7 @@ export const MasterDashboard: React.FC = () => {
             <Button variant="secondary" onClick={() => setBroadcastOpen(false)}>
               Отменить
             </Button>
-            <Button variant="primary" onClick={handleBroadcast}>
+            <Button variant="primary" onClick={handleBroadcast} isLoading={broadcasting}>
               Отправить
             </Button>
           </>
@@ -254,7 +263,7 @@ export const MasterDashboard: React.FC = () => {
           onChange={(e) => setBroadcastText(e.target.value.slice(0, 500))}
         />
         <p className="text-xs text-hint mt-2">
-          ⚠️ Отправка заработает после подключения Telegram-бота на backend.
+          Сообщение придёт в Telegram каждому клиенту, оставлявшему заявку.
         </p>
       </Modal>
     </div>

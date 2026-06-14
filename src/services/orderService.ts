@@ -1,110 +1,63 @@
 /**
  * services/orderService.ts
- * Service для работы с заказами (обёртка над API)
- * Использует либо mock API (разработка), либо реальный (production)
+ * Service для работы с заказами — обращается к нашему backend REST API.
  */
 
-import type { Order, ApiResponse, ApiListResponse, Price } from '../types';
-import {
-  mockCreateOrder,
-  mockGetOrder,
-  mockGetClientOrders,
-  countActiveClientOrders,
-  mockGetMasterOrders,
-  mockSetOrderPrice,
-  mockRejectOrder,
-  mockRequestClarification,
-  mockConfirmOrder,
-} from '../api/mock';
-// TODO Backend: import { apiClient } from '../api/client';
-// TODO Backend: import { ENDPOINTS } from '../api/endpoints';
-
-// ============================================================================
-// ORDER SERVICE
-// ============================================================================
+import type { Order, ApiResponse, Price } from '../types';
+import { apiGet, apiPost } from '../api/api_http';
 
 class OrderService {
-  /**
-   * Создает новую заявку
-   * TODO Backend: Заменить на apiClient.post(ENDPOINTS.ORDERS.CREATE, data)
-   */
+  /** Создаёт новую заявку (клиент определяется по Telegram initData на сервере). */
   async createOrder(
-    orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>
+    orderData: Partial<Order>
   ): Promise<ApiResponse<Order>> {
-    return mockCreateOrder(orderData);
+    return apiPost<Order>('/orders', orderData);
   }
 
-  /**
-   * Получает заявки текущего клиента
-   * TODO Backend: Заменить на apiClient.get(ENDPOINTS.ORDERS.CLIENT_ORDERS)
-   */
-  async getClientOrders(clientId: string): Promise<ApiListResponse<Order>> {
-    return mockGetClientOrders(clientId);
+  /** Заявки текущего клиента. */
+  async getClientOrders(): Promise<ApiResponse<Order[]>> {
+    return apiGet<Order[]>('/orders/mine');
   }
 
-  /**
-   * Кол-во активных заявок клиента (для лимита)
-   */
-  countActiveOrders(clientId: string): number {
-    return countActiveClientOrders(clientId);
+  /** Кол-во активных заявок клиента. */
+  async getActiveCount(): Promise<ApiResponse<{ count: number }>> {
+    return apiGet<{ count: number }>('/orders/active-count');
   }
 
-  /**
-   * Получает заявку по ID
-   * TODO Backend: Заменить на apiClient.get(ENDPOINTS.ORDERS.GET(orderId))
-   */
-  async getOrder(orderId: string): Promise<ApiResponse<Order>> {
-    return mockGetOrder(orderId);
+  /** Все заявки (для мастера). */
+  async getMasterOrders(): Promise<ApiResponse<Order[]>> {
+    return apiGet<Order[]>('/orders');
   }
 
-  /**
-   * Получает все заявки мастера (опционально фильтр по статусу)
-   * TODO Backend: Заменить на apiClient.get(ENDPOINTS.ORDERS.MASTER_ORDERS)
-   */
-  async getMasterOrders(status?: string): Promise<ApiListResponse<Order>> {
-    return mockGetMasterOrders(status);
-  }
-
-  /**
-   * Устанавливает цену за заявку
-   * TODO Backend: Заменить на apiClient.put(ENDPOINTS.ORDERS.SET_PRICE(orderId), ...)
-   */
+  /** Назначить стоимость. */
   async setOrderPrice(
     orderId: string,
-    totalPrice: Price,
-    prepayment?: Price
+    totalPrice: Price
   ): Promise<ApiResponse<Order>> {
-    return mockSetOrderPrice(orderId, totalPrice, prepayment);
+    return apiPost<Order>(`/orders/${orderId}/price`, {
+      amount: totalPrice.amount,
+    });
   }
 
-  /**
-   * Отклоняет заявку
-   * TODO Backend: Заменить на apiClient.put(ENDPOINTS.ORDERS.REJECT(orderId), ...)
-   */
-  async rejectOrder(orderId: string, reason?: string): Promise<ApiResponse<Order>> {
-    return mockRejectOrder(orderId, reason);
-  }
-
-  /**
-   * Запрашивает уточнение у клиента (статус -> awaiting_price)
-   * TODO Backend: Заменить на apiClient.put(ENDPOINTS.ORDERS.CLARIFY(orderId), ...)
-   */
+  /** Запросить уточнение у клиента. */
   async requestClarification(
     orderId: string,
     message: string
   ): Promise<ApiResponse<Order>> {
-    return mockRequestClarification(orderId, message);
+    return apiPost<Order>(`/orders/${orderId}/clarify`, { message });
   }
 
-  /**
-   * Подтверждает заявку после оплаты
-   * TODO Backend: Заменить на apiClient.put(ENDPOINTS.ORDERS.CONFIRM(orderId), ...)
-   */
-  async confirmOrder(
+  /** Отклонить заявку. */
+  async rejectOrder(
     orderId: string,
-    paymentProofUrl: string
+    reason?: string
   ): Promise<ApiResponse<Order>> {
-    return mockConfirmOrder(orderId, paymentProofUrl);
+    return apiPost<Order>(`/orders/${orderId}/reject`, { reason });
+  }
+
+  /** Рассылка всем клиентам. */
+  async broadcast(text: string): Promise<ApiResponse<{ total: number; sent: number }>> {
+    return apiPost<{ total: number; sent: number }>('/broadcast', { text });
   }
 }
 

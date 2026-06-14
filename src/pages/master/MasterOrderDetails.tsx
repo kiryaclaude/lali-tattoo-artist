@@ -19,7 +19,6 @@ import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
 import { formatPlacement, formatSize, formatPrice } from '../../utils';
 import { useNav } from '../../hooks';
 import { MASTER_ROUTES } from '../../routes';
-import { seedMasterDashboard } from '../../api/mock';
 
 const WISHES_CLAMP = 160;
 
@@ -46,13 +45,12 @@ export const MasterOrderDetails: React.FC = () => {
 
   const goBack = () => navigate(MASTER_ROUTES.DASHBOARD);
 
-  // Если зашли по прямой ссылке/после перезагрузки — подтягиваем заявку
+  // Если зашли по прямой ссылке/после перезагрузки — подтягиваем заявку с сервера
   useEffect(() => {
     if (!selectedOrder && orderId) {
       (async () => {
-        seedMasterDashboard();
         const res = await orderService.getMasterOrders();
-        if (res.success) {
+        if (res.success && res.data) {
           setOrders(res.data);
           setSelectedOrder(orderId);
         }

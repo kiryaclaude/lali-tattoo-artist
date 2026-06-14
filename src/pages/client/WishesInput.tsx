@@ -10,7 +10,7 @@ import { Input, Card } from '../../components/ui';
 import { useNav } from '../../hooks';
 import { getPrevFormStepPath, CLIENT_ROUTES } from '../../routes';
 import { useAppStore, useNotification } from '../../store';
-import { orderService, getClientId } from '../../services';
+import { orderService } from '../../services';
 
 export const WishesInput: React.FC = () => {
   const form = useForm();
@@ -20,20 +20,12 @@ export const WishesInput: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    // Лимит: не больше 3 активных заявок у клиента
-    if (orderService.countActiveOrders(getClientId()) >= 3) {
-      notify.error('Достигнут лимит: максимум 3 активные заявки');
-      navigate(CLIENT_ROUTES.HOME);
-      return;
-    }
-
     setIsSubmitting(true);
     setLoading(true);
 
     try {
-      // Собираем все данные формы
+      // clientId и проверку лимита делает сервер по Telegram initData
       const orderData = {
-        clientId: getClientId(),
         clientName: form.clientName,
         clientPhone: form.clientPhone,
         clientAge: form.clientAge!,
@@ -56,14 +48,14 @@ export const WishesInput: React.FC = () => {
 
       if (response.success && response.data) {
         notify.success('Заявка отправлена успешно!');
-        // Очищаем форму
         form.resetForm();
-        // Переходим на страницу успеха
         navigate(CLIENT_ROUTES.FORM_SUCCESS);
       } else {
-        notify.error(
-          response.error?.message || 'Ошибка при отправке заявки'
-        );
+        const msg =
+          (response as { message?: string }).message ||
+          response.error?.message ||
+          'Ошибка при отправке заявки';
+        notify.error(msg);
       }
     } catch (error) {
       notify.error('Ошибка при отправке заявки');

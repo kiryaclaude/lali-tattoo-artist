@@ -7,12 +7,14 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "start": "node server.mjs",
+    "start": "node server/index.mjs",
     "type-check": "tsc --noEmit",
     "lint": "echo 'Add eslint when needed'"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.28.0",
+    "express": "^4.19.2",
+    "pg": "^8.11.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0",
