@@ -4,7 +4,7 @@
  */
 
 import type { Order, ApiResponse, Price } from '../types';
-import { apiGet, apiPost } from '../api/api_http';
+import { apiGet, apiPost, apiDelete } from '../api/api_http';
 
 class OrderService {
   /** Создаёт новую заявку (клиент определяется по Telegram initData на сервере). */
@@ -45,6 +45,11 @@ class OrderService {
   /** Мастер подтверждает запись после оплаты. */
   async confirmOrder(orderId: string): Promise<ApiResponse<Order>> {
     return apiPost<Order>(`/orders/${orderId}/confirm`, {});
+  }
+
+  /** Удаляет заявку (клиент — свои завершённые/отклонённые; мастер — любые). */
+  async deleteOrder(orderId: string): Promise<ApiResponse<{ id: string }>> {
+    return apiDelete<{ id: string }>(`/orders/${orderId}`);
   }
 
   /** Назначить стоимость. */

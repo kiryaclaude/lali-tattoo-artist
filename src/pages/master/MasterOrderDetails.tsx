@@ -146,11 +146,25 @@ export const MasterOrderDetails: React.FC = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Удалить эту заявку безвозвратно?')) return;
+    try {
+      const res = await orderService.deleteOrder(orderId);
+      if (res.success) {
+        notify.success('Заявка удалена');
+        goBack();
+      }
+    } catch {
+      notify.error('Ошибка при удалении');
+    }
+  };
+
   const showImg = !!order.sketchUrl && !sketchErr && /^(https?:|data:)/.test(order.sketchUrl);
   const wishes = order.wishes || '';
   const wishesLong = wishes.length > WISHES_CLAMP;
   const isPending = order.status === 'pending';
   const isPaying = order.status === 'payment_pending';
+  const canDelete = ['rejected', 'confirmed', 'cancelled'].includes(order.status);
 
   return (
     <div className="space-y-5 max-w-3xl mx-auto pb-6">
@@ -331,6 +345,16 @@ export const MasterOrderDetails: React.FC = () => {
         <Button variant="secondary" fullWidth onClick={goBack}>
           ‹ Вернуться к заявкам
         </Button>
+      )}
+
+      {/* Удаление завершённых/отклонённых */}
+      {canDelete && (
+        <button
+          onClick={handleDelete}
+          className="self-center mx-auto block mt-1 text-sm text-red-400 font-medium"
+        >
+          Удалить заявку
+        </button>
       )}
 
       {/* Модалка цены */}

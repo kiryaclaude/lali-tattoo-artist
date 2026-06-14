@@ -59,9 +59,14 @@ export const ExperienceSelect: React.FC = () => {
           <NumberInput
             label="Сколько у вас тату?"
             value={form.tattooCount}
-            onChange={form.setTattooCount}
+            onChange={(v) =>
+              form.setTattooCount(
+                v === null ? null : Math.min(Math.max(v, 1), 100)
+              )
+            }
             min={1}
-            max={50}
+            max={100}
+            placeholder="5"
           />
         )}
       </div>

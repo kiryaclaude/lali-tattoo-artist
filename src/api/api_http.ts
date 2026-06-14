@@ -65,3 +65,19 @@ export async function apiPost<T>(
     };
   }
 }
+
+export async function apiDelete<T>(path: string): Promise<ApiResponse<T>> {
+  try {
+    const res = await fetch(`/api${path}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    return parse<T>(res);
+  } catch {
+    return {
+      success: false,
+      error: { code: 'NETWORK', message: 'Нет соединения с сервером' },
+      timestamp: new Date().toISOString(),
+    };
+  }
+}

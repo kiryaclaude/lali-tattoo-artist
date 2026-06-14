@@ -203,3 +203,8 @@ export async function confirmOrder(id) {
   );
   return rowToOrder(rows[0]);
 }
+
+/** Удаляет заявку. */
+export async function deleteOrder(id) {
+  await pool.query(`DELETE FROM orders WHERE id = $1`, [id]);
+}

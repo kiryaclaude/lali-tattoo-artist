@@ -83,6 +83,19 @@ export const ClientOrderDetails: React.FC = () => {
   const isPriceSet = order.status === 'price_set';
   const isPaying = order.status === 'payment_pending';
   const isConfirmed = order.status === 'confirmed';
+  const canDelete = ['rejected', 'confirmed', 'cancelled'].includes(order.status);
+
+  const handleDelete = async () => {
+    if (!orderId) return;
+    if (!window.confirm('Удалить эту заявку?')) return;
+    const res = await orderService.deleteOrder(orderId);
+    if (res.success) {
+      notify.success('Заявка удалена');
+      navigate(CLIENT_ROUTES.HOME);
+    } else {
+      notify.error('Не удалось удалить заявку');
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col space-y-5 pb-6">
@@ -248,6 +261,15 @@ export const ClientOrderDetails: React.FC = () => {
             Мастер ждёт вас. Спасибо!
           </p>
         </Card>
+      )}
+
+      {canDelete && (
+        <button
+          onClick={handleDelete}
+          className="self-center mt-2 text-sm text-red-400 font-medium"
+        >
+          Удалить заявку
+        </button>
       )}
     </div>
   );

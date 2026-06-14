@@ -180,6 +180,28 @@ app.post('/api/orders/:id/receipt', auth, async (req, res) => {
   }
 });
 
+// Удаление заявки: клиент — только свои завершённые/отклонённые; мастер — любые
+app.delete('/api/orders/:id', auth, async (req, res) => {
+  try {
+    const order = await db.getOrder(req.params.id);
+    if (!order) return res.status(404).json({ success: false, error: 'not_found' });
+
+    const master = isMaster(req.user.id);
+    const owner = String(order.clientId) === String(req.user.id);
+    const terminal = ['rejected', 'confirmed', 'cancelled'].includes(order.status);
+
+    if (!master && !(owner && terminal)) {
+      return res.status(403).json({ success: false, error: 'forbidden' });
+    }
+
+    await db.deleteOrder(req.params.id);
+    ok(res, { id: req.params.id });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'server_error' });
+  }
+});
+
 // ============================ MASTER ============================
 
 // Все заявки
