@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNav } from '../../hooks';
 import {
-  useMainButton,
+  hideMainButton,
   hideBackButton,
   selectionHaptic,
   getClientId,
@@ -28,9 +28,11 @@ export const ClientHome: React.FC = () => {
   const notify = useNotification();
   const [orders, setOrders] = useState<Order[]>([]);
 
-  // Скрываем Back Button на главной странице
+  // Скрываем нативные кнопки Telegram на главной
+  // (используем только зелёную кнопку в интерфейсе)
   useEffect(() => {
     hideBackButton();
+    hideMainButton();
   }, []);
 
   // Загружаем заявки клиента
@@ -60,9 +62,6 @@ export const ClientHome: React.FC = () => {
     selectionHaptic();
     navigate(CLIENT_ROUTES.FORM_SKETCH);
   };
-
-  // Telegram MainButton дублирует основное действие
-  useMainButton(hasOrders ? 'Новая заявка' : 'Начать запись', handleStartForm);
 
   return (
     // Сплэш: логотип во весь экран + контент снизу.
