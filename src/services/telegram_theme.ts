@@ -1,0 +1,68 @@
+/**
+ * services/telegram/theme.ts
+ * Управление темой Telegram
+ */
+
+import { getTgApp } from './telegram_init';
+
+/**
+ * Получает текущую тему (light/dark)
+ */
+export function getTelegramTheme(): 'light' | 'dark' {
+  const tg = getTgApp();
+  if (!tg) return 'light';
+  return tg.colorScheme || 'light';
+}
+
+/**
+ * Получает параметры темы Telegram
+ */
+export function getTelegramThemeParams(): Record<string, string> {
+  const tg = getTgApp();
+  if (!tg) return {};
+  return tg.themeParams || {};
+}
+
+/**
+ * Применяет Telegram тему к приложению
+ */
+export function applyTelegramTheme(): void {
+  const theme = getTelegramTheme();
+  const root = document.documentElement;
+
+  if (theme === 'dark') {
+    root.classList.add('dark');
+  } else {
+    root.classList.remove('dark');
+  }
+
+  // Применяем цвета из themeParams
+  const params = getTelegramThemeParams();
+  if (params.bg_color) {
+    root.style.setProperty('--telegram-bg-color', params.bg_color);
+  }
+  if (params.text_color) {
+    root.style.setProperty('--telegram-text-color', params.text_color);
+  }
+}
+
+/**
+ * React hook для применения Telegram темы
+ */
+import { useEffect } from 'react';
+
+export function useTelegramTheme(): void {
+  useEffect(() => {
+    applyTelegramTheme();
+
+    // Переприменяем тему при изменении viewport
+    const handleResize = () => {
+      applyTelegramTheme();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+}
