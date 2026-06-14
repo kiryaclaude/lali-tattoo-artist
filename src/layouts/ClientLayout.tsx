@@ -38,7 +38,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({
   return (
     <div
       className={`flex flex-col min-h-screen text-white ${
-        isHome ? 'bg-page' : 'bg-[#83817b]'
+        isHome ? 'bg-page' : 'client-surface'
       }`}
     >
       {/* Main content */}

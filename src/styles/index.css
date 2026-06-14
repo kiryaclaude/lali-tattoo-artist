@@ -24,3 +24,18 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Серые клиентские экраны (кроме главной).
+   Фирменный серый оттенок + светлый вторичный текст, чтобы читался на сером. */
+.client-surface {
+  background-color: #83817b;
+}
+.client-surface .text-muted {
+  color: rgba(255, 255, 255, 0.74);
+}
+.client-surface .text-hint {
+  color: rgba(255, 255, 255, 0.52);
+}
+.client-surface .placeholder-hint::placeholder {
+  color: rgba(255, 255, 255, 0.52);
+}
