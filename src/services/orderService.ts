@@ -52,6 +52,14 @@ class OrderService {
     return apiDelete<{ id: string }>(`/orders/${orderId}`);
   }
 
+  /** Клиент отвечает на запрос уточнения. */
+  async replyToOrder(
+    orderId: string,
+    message: string
+  ): Promise<ApiResponse<Order>> {
+    return apiPost<Order>(`/orders/${orderId}/reply`, { message });
+  }
+
   /** Назначить стоимость. */
   async setOrderPrice(
     orderId: string,

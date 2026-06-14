@@ -208,3 +208,18 @@ export async function confirmOrder(id) {
 export async function deleteOrder(id) {
   await pool.query(`DELETE FROM orders WHERE id = $1`, [id]);
 }
+
+/** Клиент ответил на уточнение → возвращаем в pending, дописываем ответ в пожелания. */
+export async function clientReply(id, message) {
+  const { rows } = await pool.query(
+    `UPDATE orders
+       SET status = 'pending',
+           wishes = COALESCE(NULLIF(wishes, ''), '') ||
+                    CASE WHEN COALESCE(wishes,'') = '' THEN '' ELSE E'\n\n' END ||
+                    '✏️ Ответ клиента: ' || $2,
+           updated_at = now()
+     WHERE id = $1 RETURNING *`,
+    [id, message]
+  );
+  return rowToOrder(rows[0]);
+}

@@ -7,7 +7,7 @@ import { useParams } from 'react-router-dom';
 import { useNav } from '../../hooks';
 import { orderService } from '../../services';
 import { useNotification } from '../../store';
-import { Card, Button, LoadingSpinner } from '../../components/ui';
+import { Card, Button, LoadingSpinner, Modal, Input } from '../../components/ui';
 import { FileUpload } from '../../components/forms';
 import {
   formatPlacement,
@@ -27,6 +27,9 @@ export const ClientOrderDetails: React.FC = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [replyModal, setReplyModal] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [replying, setReplying] = useState(false);
 
   const load = async () => {
     if (!orderId) return;
@@ -83,7 +86,28 @@ export const ClientOrderDetails: React.FC = () => {
   const isPriceSet = order.status === 'price_set';
   const isPaying = order.status === 'payment_pending';
   const isConfirmed = order.status === 'confirmed';
+  const isClarify = order.status === 'awaiting_price';
   const canDelete = ['rejected', 'confirmed', 'cancelled'].includes(order.status);
+
+  const handleReply = async () => {
+    if (!orderId || !replyText.trim()) return;
+    setReplying(true);
+    try {
+      const res = await orderService.replyToOrder(orderId, replyText.trim());
+      if (res.success && res.data) {
+        setOrder(res.data);
+        notify.success('Ответ отправлен мастеру');
+        setReplyModal(false);
+        setReplyText('');
+      } else {
+        notify.error('Не удалось отправить ответ');
+      }
+    } catch {
+      notify.error('Ошибка при отправке ответа');
+    } finally {
+      setReplying(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!orderId) return;
@@ -183,6 +207,13 @@ export const ClientOrderDetails: React.FC = () => {
         </Card>
       )}
 
+      {/* Ответ клиента на уточнение */}
+      {isClarify && (
+        <Button variant="primary" fullWidth onClick={() => setReplyModal(true)}>
+          Ответить мастеру
+        </Button>
+      )}
+
       {/* Стоимость + оплата */}
       {hasPrice && (
         <Card>
@@ -271,6 +302,33 @@ export const ClientOrderDetails: React.FC = () => {
           Удалить заявку
         </button>
       )}
+
+      {/* Модалка ответа на уточнение */}
+      <Modal
+        isOpen={replyModal}
+        onClose={() => setReplyModal(false)}
+        title="Ответ мастеру"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setReplyModal(false)}>
+              Отменить
+            </Button>
+            <Button variant="primary" onClick={handleReply} isLoading={replying}>
+              Отправить
+            </Button>
+          </>
+        }
+      >
+        <Input
+          label="Ваш ответ"
+          placeholder="Напишите ответ на вопрос мастера..."
+          multiline
+          rows={3}
+          maxLength={300}
+          value={replyText}
+          onChange={(e) => setReplyText(e.target.value.slice(0, 300))}
+        />
+      </Modal>
     </div>
   );
 };

@@ -180,6 +180,29 @@ app.post('/api/orders/:id/receipt', auth, async (req, res) => {
   }
 });
 
+// Клиент отвечает на запрос уточнения → заявка снова в работе (pending)
+app.post('/api/orders/:id/reply', auth, async (req, res) => {
+  try {
+    const order = await db.getOrder(req.params.id);
+    if (!order) return res.status(404).json({ success: false, error: 'not_found' });
+    if (String(order.clientId) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, error: 'forbidden' });
+    }
+    const message = (req.body?.message || '').trim();
+    if (!message) return res.status(400).json({ success: false, error: 'empty' });
+
+    const updated = await db.clientReply(req.params.id, message);
+    const note =
+      `✏️ <b>Ответ от клиента</b>\n${updated.clientName || 'Клиент'} ` +
+      `(${updated.placement} · ${updated.size.width}×${updated.size.height} см):\n${message}`;
+    for (const mid of MASTER_IDS) sendMessage(mid, note);
+    ok(res, updated);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'server_error' });
+  }
+});
+
 // Удаление заявки: клиент — только свои завершённые/отклонённые; мастер — любые
 app.delete('/api/orders/:id', auth, async (req, res) => {
   try {
