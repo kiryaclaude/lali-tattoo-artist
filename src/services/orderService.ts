@@ -13,6 +13,7 @@ import {
   mockGetMasterOrders,
   mockSetOrderPrice,
   mockRejectOrder,
+  mockRequestClarification,
   mockConfirmOrder,
 } from '../api/mock';
 // TODO Backend: import { apiClient } from '../api/client';
@@ -82,6 +83,17 @@ class OrderService {
    */
   async rejectOrder(orderId: string, reason?: string): Promise<ApiResponse<Order>> {
     return mockRejectOrder(orderId, reason);
+  }
+
+  /**
+   * Запрашивает уточнение у клиента (статус -> awaiting_price)
+   * TODO Backend: Заменить на apiClient.put(ENDPOINTS.ORDERS.CLARIFY(orderId), ...)
+   */
+  async requestClarification(
+    orderId: string,
+    message: string
+  ): Promise<ApiResponse<Order>> {
+    return mockRequestClarification(orderId, message);
   }
 
   /**

@@ -3,23 +3,35 @@
  * Детали заявки для мастера
  */
 
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useMasterStore } from '../../store';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useMasterStore, useNotification } from '../../store';
 import { orderService } from '../../services';
-import { Button, Card, Badge, Modal, Input, LoadingSpinner } from '../../components/ui';
+import {
+  Button,
+  Card,
+  Modal,
+  Input,
+  LoadingSpinner,
+} from '../../components/ui';
 import { NumberInput } from '../../components/forms';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
-import { formatPlacement, formatSize } from '../../utils';
-import { useNotification } from '../../store';
+import { formatPlacement, formatSize, formatPrice } from '../../utils';
+import { useNav } from '../../hooks';
 import { MASTER_ROUTES } from '../../routes';
+import { seedMasterDashboard } from '../../api/mock';
+
+const WISHES_CLAMP = 160;
 
 export const MasterOrderDetails: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
-  const navigate = useNavigate();
-  const selectedOrder = useMasterStore((state) => state.selectedOrder);
-  const updateOrderStatus = useMasterStore((state) => state.updateOrderStatus);
-  const updateOrderPrice = useMasterStore((state) => state.updateOrderPrice);
+  const { navigate } = useNav();
+  const selectedOrder = useMasterStore((s) => s.selectedOrder);
+  const setOrders = useMasterStore((s) => s.setOrders);
+  const setSelectedOrder = useMasterStore((s) => s.setSelectedOrder);
+  const updateOrderStatus = useMasterStore((s) => s.updateOrderStatus);
+  const updateOrderPrice = useMasterStore((s) => s.updateOrderPrice);
+  const updateOrderFeedback = useMasterStore((s) => s.updateOrderFeedback);
   const notify = useNotification();
 
   const [priceModal, setPriceModal] = useState(false);
@@ -29,6 +41,25 @@ export const MasterOrderDetails: React.FC = () => {
   const [feedbackModal, setFeedbackModal] = useState(false);
   const [feedback, setFeedback] = useState('');
 
+  const [sketchErr, setSketchErr] = useState(false);
+  const [wishesOpen, setWishesOpen] = useState(false);
+
+  const goBack = () => navigate(MASTER_ROUTES.DASHBOARD);
+
+  // Если зашли по прямой ссылке/после перезагрузки — подтягиваем заявку
+  useEffect(() => {
+    if (!selectedOrder && orderId) {
+      (async () => {
+        seedMasterDashboard();
+        const res = await orderService.getMasterOrders();
+        if (res.success) {
+          setOrders(res.data);
+          setSelectedOrder(orderId);
+        }
+      })();
+    }
+  }, [selectedOrder, orderId, setOrders, setSelectedOrder]);
+
   if (!orderId || !selectedOrder) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -37,34 +68,28 @@ export const MasterOrderDetails: React.FC = () => {
     );
   }
 
+  const order = selectedOrder;
+
   const handleSetPrice = async () => {
     if (!priceAmount || priceAmount <= 0) {
       notify.error('Укажите корректную цену');
       return;
     }
-
     setIsSubmitting(true);
-
     try {
-      const response = await orderService.setOrderPrice(
-        orderId,
-        { amount: priceAmount, currency: 'RUB' }
-      );
-
-      if (response.success && response.data) {
-        updateOrderPrice(
-          orderId,
-          { amount: priceAmount, currency: 'RUB' },
-          {
-            amount: Math.ceil(priceAmount * 0.2),
-            currency: 'RUB',
-          }
-        );
+      const prepayment = { amount: Math.ceil(priceAmount * 0.2), currency: 'RUB' };
+      const res = await orderService.setOrderPrice(orderId, {
+        amount: priceAmount,
+        currency: 'RUB',
+      });
+      if (res.success) {
+        updateOrderPrice(orderId, { amount: priceAmount, currency: 'RUB' }, prepayment);
         notify.success('Цена установлена');
         setPriceModal(false);
         setPriceAmount(null);
+        goBack();
       }
-    } catch (error) {
+    } catch {
       notify.error('Ошибка при установке цены');
     } finally {
       setIsSubmitting(false);
@@ -76,19 +101,17 @@ export const MasterOrderDetails: React.FC = () => {
       notify.error('Укажите вопрос или уточнение');
       return;
     }
-
     setIsSubmitting(true);
-
     try {
-      const response = await orderService.rejectOrder(orderId, feedback);
-
-      if (response.success) {
-        updateOrderStatus(orderId, 'awaiting_price');
+      const res = await orderService.requestClarification(orderId, feedback);
+      if (res.success) {
+        updateOrderFeedback(orderId, feedback);
         notify.success('Уточнение отправлено');
         setFeedbackModal(false);
         setFeedback('');
+        goBack();
       }
-    } catch (error) {
+    } catch {
       notify.error('Ошибка при отправке уточнения');
     } finally {
       setIsSubmitting(false);
@@ -96,153 +119,188 @@ export const MasterOrderDetails: React.FC = () => {
   };
 
   const handleReject = async () => {
-    if (!window.confirm('Вы уверены, что хотите отклонить эту заявку?')) {
-      return;
-    }
-
+    if (!window.confirm('Отклонить эту заявку?')) return;
     try {
-      const response = await orderService.rejectOrder(
-        orderId,
-        'Отклонено мастером'
-      );
-
-      if (response.success) {
+      const res = await orderService.rejectOrder(orderId, 'Отклонено мастером');
+      if (res.success) {
+        updateOrderStatus(orderId, 'rejected');
         notify.success('Заявка отклонена');
-        navigate(MASTER_ROUTES.DASHBOARD);
+        goBack();
       }
-    } catch (error) {
+    } catch {
       notify.error('Ошибка при отклонении заявки');
     }
   };
 
+  const showImg = !!order.sketchUrl && !sketchErr && /^https?:\/\//.test(order.sketchUrl);
+  const wishes = order.wishes || '';
+  const wishesLong = wishes.length > WISHES_CLAMP;
+  const isPending = order.status === 'pending';
+
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-5 max-w-3xl mx-auto pb-6">
+      {/* Назад */}
+      <button
+        onClick={goBack}
+        className="inline-flex items-center gap-1 text-brand font-medium text-sm"
+      >
+        ‹ К заявкам
+      </button>
+
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">
-            {selectedOrder.clientName}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-white truncate">
+            {order.clientName || 'Без имени'}
           </h1>
-          <p className="text-muted mt-1">
-            {selectedOrder.clientPhone}
-          </p>
+          {order.clientPhone && (
+            <p className="text-muted mt-1 text-sm">{order.clientPhone}</p>
+          )}
         </div>
-        <Badge
-          variant="default"
-          className={ORDER_STATUS_COLORS[selectedOrder.status]}
+        <span
+          className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+            ORDER_STATUS_COLORS[order.status] || ''
+          }`}
         >
-          {ORDER_STATUS_LABELS[selectedOrder.status]}
-        </Badge>
+          {ORDER_STATUS_LABELS[order.status] || order.status}
+        </span>
       </div>
 
-      {/* Sketch */}
-      {selectedOrder.sketchUrl && (
-        <Card>
+      {/* Эскиз */}
+      <div className="w-full aspect-[4/3] rounded-2xl border border-line bg-card-2 overflow-hidden flex items-center justify-center">
+        {showImg ? (
           <img
-            src={selectedOrder.sketchUrl}
-            alt="Sketch"
-            className="w-full h-auto rounded-lg"
+            src={order.sketchUrl}
+            alt="Эскиз"
+            className="w-full h-full object-contain"
+            onError={() => setSketchErr(true)}
           />
+        ) : (
+          <div className="flex flex-col items-center gap-2 text-hint">
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="text-xs">Эскиз недоступен</span>
+          </div>
+        )}
+      </div>
+
+      {/* Параметры */}
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { label: 'Возраст', value: `${order.clientAge} лет` },
+          { label: 'Расположение', value: formatPlacement(order.placement) },
+          { label: 'Размер', value: formatSize(order.size.height, order.size.width) },
+          {
+            label: 'Опыт',
+            value: order.experience.hasTattoos
+              ? `${order.experience.tattooCount || 1} тату`
+              : 'Первая',
+          },
+        ].map((item) => (
+          <Card key={item.label}>
+            <p className="text-xs font-semibold text-muted uppercase mb-1">
+              {item.label}
+            </p>
+            <p className="text-lg font-bold text-white break-words">{item.value}</p>
+          </Card>
+        ))}
+      </div>
+
+      {/* Цена (если назначена) */}
+      {order.totalPrice && (
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-muted uppercase mb-1">
+                Стоимость
+              </p>
+              <p className="text-xl font-bold text-white">
+                {formatPrice(order.totalPrice.amount, order.totalPrice.currency)}
+              </p>
+            </div>
+            {order.prepayment && (
+              <div className="text-right">
+                <p className="text-xs font-semibold text-muted uppercase mb-1">
+                  Предоплата
+                </p>
+                <p className="text-lg font-bold text-brand">
+                  {formatPrice(order.prepayment.amount, order.prepayment.currency)}
+                </p>
+              </div>
+            )}
+          </div>
         </Card>
       )}
 
-      {/* Details Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <p className="text-xs font-semibold text-muted uppercase mb-1">
-            Возраст
-          </p>
-          <p className="text-xl font-bold text-white">
-            {selectedOrder.clientAge} лет
-          </p>
-        </Card>
-
-        <Card>
-          <p className="text-xs font-semibold text-muted uppercase mb-1">
-            Расположение
-          </p>
-          <p className="text-lg font-bold text-white">
-            {formatPlacement(selectedOrder.placement)}
-          </p>
-        </Card>
-
-        <Card>
-          <p className="text-xs font-semibold text-muted uppercase mb-1">
-            Размер
-          </p>
-          <p className="text-lg font-bold text-white">
-            {formatSize(selectedOrder.size.height, selectedOrder.size.width)}
-          </p>
-        </Card>
-
-        <Card>
-          <p className="text-xs font-semibold text-muted uppercase mb-1">
-            Опыт
-          </p>
-          <p className="text-lg font-bold text-white">
-            {selectedOrder.experience.hasTattoos
-              ? `${selectedOrder.experience.tattooCount || 1} тату`
-              : 'Первая'}
-          </p>
-        </Card>
-      </div>
-
-      {/* Wishes */}
-      {selectedOrder.wishes && (
+      {/* Пожелания (сворачиваемые) */}
+      {wishes && (
         <Card>
           <p className="text-xs font-semibold text-muted uppercase mb-2">
             Пожелания клиента
           </p>
-          <p className="text-white">
-            {selectedOrder.wishes}
+          <p
+            className={`text-white whitespace-pre-wrap break-words ${
+              wishesLong && !wishesOpen ? 'line-clamp-3' : ''
+            }`}
+          >
+            {wishes}
+          </p>
+          {wishesLong && (
+            <button
+              onClick={() => setWishesOpen((v) => !v)}
+              className="mt-2 text-sm text-brand font-medium"
+            >
+              {wishesOpen ? 'Свернуть' : 'Показать полностью'}
+            </button>
+          )}
+        </Card>
+      )}
+
+      {/* Ответ мастера (если был) */}
+      {order.masterFeedback && (
+        <Card>
+          <p className="text-xs font-semibold text-muted uppercase mb-2">
+            {order.status === 'rejected' ? 'Причина отклонения' : 'Запрошено уточнение'}
+          </p>
+          <p className="text-white whitespace-pre-wrap break-words">
+            {order.masterFeedback}
           </p>
         </Card>
       )}
 
-      {/* Actions */}
-      {selectedOrder.status === 'pending' && (
-        <div className="flex gap-3">
-          <Button
-            variant="primary"
-            fullWidth
-            onClick={() => setPriceModal(true)}
-          >
+      {/* Действия */}
+      {isPending ? (
+        <div className="space-y-3">
+          <Button variant="primary" fullWidth onClick={() => setPriceModal(true)}>
             Назначить стоимость
           </Button>
-          <Button
-            variant="secondary"
-            fullWidth
-            onClick={() => setFeedbackModal(true)}
-          >
-            Запросить уточнение
-          </Button>
-          <Button
-            variant="danger"
-            onClick={handleReject}
-          >
-            Отклонить
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="secondary" fullWidth onClick={() => setFeedbackModal(true)}>
+              Запросить уточнение
+            </Button>
+            <Button variant="danger" onClick={handleReject}>
+              Отклонить
+            </Button>
+          </div>
         </div>
+      ) : (
+        <Button variant="secondary" fullWidth onClick={goBack}>
+          ‹ Вернуться к заявкам
+        </Button>
       )}
 
-      {/* Price Modal */}
+      {/* Модалка цены */}
       <Modal
         isOpen={priceModal}
         onClose={() => setPriceModal(false)}
         title="Назначить стоимость"
         footer={
           <>
-            <Button
-              variant="secondary"
-              onClick={() => setPriceModal(false)}
-            >
+            <Button variant="secondary" onClick={() => setPriceModal(false)}>
               Отменить
             </Button>
-            <Button
-              variant="primary"
-              onClick={handleSetPrice}
-              isLoading={isSubmitting}
-            >
+            <Button variant="primary" onClick={handleSetPrice} isLoading={isSubmitting}>
               Установить цену
             </Button>
           </>
@@ -253,22 +311,28 @@ export const MasterOrderDetails: React.FC = () => {
           value={priceAmount}
           onChange={setPriceAmount}
           min={1000}
-          max={100000}
+          max={1000000}
           step={1000}
+          placeholder="15000"
         />
+        {priceAmount ? (
+          <p className="text-sm text-muted mt-3">
+            Предоплата (20%):{' '}
+            <span className="text-white font-medium">
+              {formatPrice(Math.ceil(priceAmount * 0.2))}
+            </span>
+          </p>
+        ) : null}
       </Modal>
 
-      {/* Feedback Modal */}
+      {/* Модалка уточнения */}
       <Modal
         isOpen={feedbackModal}
         onClose={() => setFeedbackModal(false)}
         title="Запросить уточнение"
         footer={
           <>
-            <Button
-              variant="secondary"
-              onClick={() => setFeedbackModal(false)}
-            >
+            <Button variant="secondary" onClick={() => setFeedbackModal(false)}>
               Отменить
             </Button>
             <Button
@@ -282,10 +346,13 @@ export const MasterOrderDetails: React.FC = () => {
         }
       >
         <Input
-          label="Ваше сообщение"
-          placeholder="Что вас уточнить?"
+          label="Ваше сообщение клиенту"
+          placeholder="Что нужно уточнить?"
+          multiline
+          rows={3}
+          maxLength={300}
           value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
+          onChange={(e) => setFeedback(e.target.value.slice(0, 300))}
         />
       </Modal>
     </div>

@@ -220,6 +220,39 @@ export async function mockRejectOrder(
 }
 
 // ============================================================================
+// REQUEST CLARIFICATION (мастер запросил уточнение)
+// ============================================================================
+
+export async function mockRequestClarification(
+  orderId: string,
+  message: string
+): Promise<ApiResponse<Order>> {
+  await simulateNetworkDelay();
+
+  const order = mockStorage.orders.get(orderId);
+  if (!order) {
+    return {
+      success: false,
+      error: { code: 'NOT_FOUND', message: `Order ${orderId} not found` },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  order.status = 'awaiting_price';
+  order.masterFeedback = message;
+  order.updatedAt = new Date();
+
+  mockStorage.orders.set(orderId, order);
+  persistMockStorage();
+
+  return {
+    success: true,
+    data: order,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+// ============================================================================
 // CONFIRM ORDER
 // ============================================================================
 

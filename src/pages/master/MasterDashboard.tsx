@@ -1,53 +1,133 @@
 /**
  * pages/master/Dashboard.tsx
- * Кабинет мастера - список новых заявок
+ * Кабинет мастера — список заявок с фильтрами по статусу и рассылкой.
  */
 
-import React, { useEffect } from 'react';
-import { useMasterStore, useFilteredOrders } from '../../store';
+import React, { useEffect, useState } from 'react';
+import { useMasterStore, useNotification } from '../../store';
 import { orderService } from '../../services';
 import { useNav } from '../../hooks';
-import { LoadingSpinner, Card, Badge } from '../../components/ui';
+import { LoadingSpinner, Modal, Button, Input } from '../../components/ui';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
-import { formatTimeAgo, formatSize } from '../../utils';
+import { formatTimeAgo, formatSize, formatPlacement } from '../../utils';
 import { seedMasterDashboard } from '../../api/mock';
 import { MASTER_ROUTES } from '../../routes';
 
+const FILTERS: { key: string | null; label: string }[] = [
+  { key: null, label: 'Все' },
+  { key: 'pending', label: 'Новые' },
+  { key: 'awaiting_price', label: 'Уточнение' },
+  { key: 'price_set', label: 'Согласовано' },
+  { key: 'payment_pending', label: 'Оплата' },
+  { key: 'confirmed', label: 'Подтверждено' },
+  { key: 'rejected', label: 'Отклонено' },
+];
+
+function pluralOrders(n: number): string {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return 'заявка';
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return 'заявки';
+  return 'заявок';
+}
+
+/** Превью эскиза с graceful-фолбэком (битые/мок-ссылки → иконка). */
+const SketchThumb: React.FC<{ url?: string; className?: string }> = ({
+  url,
+  className,
+}) => {
+  const [err, setErr] = useState(false);
+  const showImg = !!url && !err && /^https?:\/\//.test(url);
+  return (
+    <div
+      className={`bg-card-2 rounded-xl flex items-center justify-center overflow-hidden ${
+        className || ''
+      }`}
+    >
+      {showImg ? (
+        <img
+          src={url}
+          alt=""
+          className="w-full h-full object-cover"
+          onError={() => setErr(true)}
+        />
+      ) : (
+        <svg
+          className="w-6 h-6 text-hint"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
+        </svg>
+      )}
+    </div>
+  );
+};
+
 export const MasterDashboard: React.FC = () => {
-  const setOrders = useMasterStore((state) => state.setOrders);
-  const setLoadingOrders = useMasterStore((state) => state.setLoadingOrders);
-  const setSelectedOrder = useMasterStore((state) => state.setSelectedOrder);
-  const filteredOrders = useFilteredOrders();
-  const isLoading = useMasterStore((state) => state.isLoadingOrders);
+  const setOrders = useMasterStore((s) => s.setOrders);
+  const setLoadingOrders = useMasterStore((s) => s.setLoadingOrders);
+  const setSelectedOrder = useMasterStore((s) => s.setSelectedOrder);
+  const setFilterStatus = useMasterStore((s) => s.setFilterStatus);
+  const allOrders = useMasterStore((s) => s.orders);
+  const filterStatus = useMasterStore((s) => s.filterStatus);
+  const isLoading = useMasterStore((s) => s.isLoadingOrders);
   const { navigate } = useNav();
+  const notify = useNotification();
+
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [broadcastText, setBroadcastText] = useState('');
 
   useEffect(() => {
-    // Загружаем заявки при монтировании
-    const loadOrders = async () => {
+    const load = async () => {
       setLoadingOrders(true);
-
-      // Заполняем mock данные (только в development)
       seedMasterDashboard();
-
       try {
-        const response = await orderService.getMasterOrders('pending');
-
-        if (response.success) {
-          setOrders(response.data);
-        }
-      } catch (error) {
-        console.error('Failed to load orders:', error);
+        const res = await orderService.getMasterOrders(); // все статусы
+        if (res.success) setOrders(res.data);
+      } catch (e) {
+        console.error('Failed to load orders:', e);
       } finally {
         setLoadingOrders(false);
       }
     };
+    setFilterStatus(null); // по умолчанию — все
+    load();
+  }, [setOrders, setLoadingOrders, setFilterStatus]);
 
-    loadOrders();
-  }, [setOrders, setLoadingOrders]);
+  const handleSelect = (id: string) => {
+    setSelectedOrder(id);
+    navigate(MASTER_ROUTES.ORDER_DETAIL.replace(':orderId', id));
+  };
 
-  const handleSelectOrder = (orderId: string) => {
-    setSelectedOrder(orderId);
-    navigate(MASTER_ROUTES.ORDER_DETAIL.replace(':orderId', orderId));
+  const countFor = (key: string | null) =>
+    key === null
+      ? allOrders.length
+      : allOrders.filter((o) => o.status === key).length;
+
+  const visible = [
+    ...(filterStatus
+      ? allOrders.filter((o) => o.status === filterStatus)
+      : allOrders),
+  ].sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  const handleBroadcast = () => {
+    if (!broadcastText.trim()) {
+      notify.error('Введите текст рассылки');
+      return;
+    }
+    notify.info('Рассылка заработает после подключения backend-бота');
+    setBroadcastOpen(false);
+    setBroadcastText('');
   };
 
   if (isLoading) {
@@ -59,76 +139,124 @@ export const MasterDashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-3xl mx-auto">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white">
-          Новые заявки
-        </h1>
-        <p className="text-muted mt-2">
-          {filteredOrders.length} заявка{filteredOrders.length === 1 ? '' : 'и'}
-        </p>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-white">Заявки</h1>
+        <button
+          onClick={() => setBroadcastOpen(true)}
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-card border border-line px-3 py-1.5 text-sm text-white hover:bg-card-2 transition-colors"
+        >
+          📢 Рассылка
+        </button>
       </div>
 
-      {/* Orders list */}
-      {filteredOrders.length === 0 ? (
-        <Card className="text-center py-12">
-          <p className="text-muted">
-            Новых заявок нет
-          </p>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredOrders.map((order) => (
-            <Card
-              key={order.id}
-              interactive
-              onClick={() => handleSelectOrder(order.id)}
-              className="cursor-pointer hover:shadow-md transition-shadow"
+      {/* Фильтры по статусу */}
+      <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1">
+        {FILTERS.map((f) => {
+          const active = filterStatus === f.key;
+          const c = countFor(f.key);
+          return (
+            <button
+              key={f.label}
+              onClick={() => setFilterStatus(f.key)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors ${
+                active
+                  ? 'bg-brand text-page border-brand font-medium'
+                  : 'bg-card text-muted border-line'
+              }`}
             >
-              <div className="flex gap-4">
-                {/* Sketch preview */}
-                <div className="w-20 h-20 bg-card-2 rounded-lg flex-shrink-0 overflow-hidden">
-                  {order.sketchUrl && (
-                    <img
-                      src={order.sketchUrl}
-                      alt="Sketch"
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </div>
+              {f.label}
+              {c > 0 && (
+                <span className={active ? ' opacity-80' : ' text-hint'}> {c}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-                {/* Order info */}
+      <p className="text-sm text-muted">
+        {visible.length} {pluralOrders(visible.length)}
+      </p>
+
+      {/* Список */}
+      {visible.length === 0 ? (
+        <div className="rounded-2xl border border-line bg-card/40 text-center py-12">
+          <p className="text-muted">Заявок нет</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {visible.map((order) => (
+            <button
+              key={order.id}
+              onClick={() => handleSelect(order.id)}
+              className="w-full text-left rounded-2xl border border-line bg-card p-4 hover:bg-card-2 transition-colors"
+            >
+              <div className="flex gap-3">
+                <SketchThumb url={order.sketchUrl} className="w-16 h-16 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-white truncate">
-                      {order.clientName}
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold text-white truncate">
+                      {order.clientName || 'Без имени'}
                     </h3>
-                    <Badge
-                      variant="default"
-                      className={ORDER_STATUS_COLORS[order.status]}
+                    <span
+                      className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        ORDER_STATUS_COLORS[order.status] || ''
+                      }`}
                     >
-                      {ORDER_STATUS_LABELS[order.status]}
-                    </Badge>
+                      {ORDER_STATUS_LABELS[order.status] || order.status}
+                    </span>
                   </div>
-
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted">
-                      📍 {order.placement} • {formatSize(order.size.height, order.size.width)}
-                    </p>
-                    <p className="text-sm text-muted truncate">
+                  <p className="text-sm text-muted mt-1 truncate">
+                    📍 {formatPlacement(order.placement)} ·{' '}
+                    {formatSize(order.size.height, order.size.width)}
+                  </p>
+                  {order.wishes && (
+                    <p className="text-sm text-hint mt-1 line-clamp-2">
                       {order.wishes}
                     </p>
-                    <p className="text-xs text-hint mt-2">
-                      {formatTimeAgo(order.createdAt)}
-                    </p>
-                  </div>
+                  )}
+                  <p className="text-xs text-hint mt-1.5">
+                    {formatTimeAgo(new Date(order.createdAt))}
+                  </p>
                 </div>
               </div>
-            </Card>
+            </button>
           ))}
         </div>
       )}
+
+      {/* Модалка рассылки */}
+      <Modal
+        isOpen={broadcastOpen}
+        onClose={() => setBroadcastOpen(false)}
+        title="Рассылка клиентам"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setBroadcastOpen(false)}>
+              Отменить
+            </Button>
+            <Button variant="primary" onClick={handleBroadcast}>
+              Отправить
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-muted mb-3">
+          Сообщение получат все клиенты, оставлявшие заявку.
+        </p>
+        <Input
+          multiline
+          rows={4}
+          maxLength={500}
+          placeholder="Текст рассылки..."
+          value={broadcastText}
+          onChange={(e) => setBroadcastText(e.target.value.slice(0, 500))}
+        />
+        <p className="text-xs text-hint mt-2">
+          ⚠️ Отправка заработает после подключения Telegram-бота на backend.
+        </p>
+      </Modal>
     </div>
   );
 };

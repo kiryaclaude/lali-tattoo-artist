@@ -59,7 +59,10 @@ export function seedMasterDashboard(): void {
     },
   ];
 
+  // Идемпотентно: не перезаписываем демо-заявки, если они уже есть
+  // (иначе смена статуса мастером сбрасывалась бы обратно на 'pending').
   testOrders.forEach((order) => {
+    if (mockStorage.orders.has(order.id)) return;
     mockStorage.orders.set(order.id, order);
     mockStorage.chats.set(order.id, {
       orderId: order.id,

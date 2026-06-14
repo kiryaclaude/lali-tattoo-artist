@@ -27,15 +27,16 @@ export const MasterLayout: React.FC<MasterLayoutProps> = ({
         </aside>
       )}
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col">
+      {/* Main content. min-w-0 — чтобы flex-колонка могла сжиматься до
+          ширины экрана и контент не вылезал за границы (важно для мобильного). */}
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header будет добавлен в следующем этапе */}
         {showHeader && (
           <header className="bg-card border-b border-line">{/* Header content */}</header>
         )}
 
         {/* Content */}
-        <main className="flex-1 p-6 overflow-auto">{children}</main>
+        <main className="flex-1 p-5 overflow-x-hidden overflow-y-auto">{children}</main>
       </div>
     </div>
   );
