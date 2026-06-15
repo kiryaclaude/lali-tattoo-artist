@@ -59,8 +59,27 @@ export const ClientHome: React.FC = () => {
         </div>
       </div>
 
+      {/* Подзаголовок */}
+      <div className="text-center mt-7">
+        <div
+          className="mx-auto mb-4"
+          style={{ width: '44px', height: '2px', background: '#ABBDA3' }}
+        />
+        <p
+          style={{
+            fontSize: '16px',
+            color: 'rgba(255,255,255,0.92)',
+            lineHeight: 1.55,
+            letterSpacing: '0.3px',
+          }}
+        >
+          Запись к мастеру
+          <br />в несколько шагов
+        </p>
+      </div>
+
       {/* Процесс записи */}
-      <div className="mt-10 rounded-3xl bg-card border border-line p-5">
+      <div className="mt-7 rounded-3xl bg-card border border-line p-5">
         <p className="uppercase text-xs font-semibold mb-3 tracking-wider text-muted">
           Процесс записи
         </p>

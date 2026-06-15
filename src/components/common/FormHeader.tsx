@@ -33,7 +33,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
     onBack ? onBack() : goBack();
   };
 
-  const showBack = (step ?? 1) > 0;
+  const showBack = onBack !== undefined || (step ?? 1) > 0;
   const progress =
     step !== undefined && totalSteps !== undefined
       ? ((step + 1) / totalSteps) * 100
