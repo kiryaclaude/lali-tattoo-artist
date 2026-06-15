@@ -1,6 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-green: #abbda3;
+  --color-gray: #757575;
+  --color-light: #fffded;
+}
 
 * {
   margin: 0;
@@ -16,26 +23,48 @@ body,
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  background-color: #0f0f0f;
-  color: #f2f2f3;
+  font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto',
+    'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--color-gray);
+  color: var(--color-light);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Серые клиентские экраны (кроме главной).
-   Фирменный серый оттенок + светлый вторичный текст, чтобы читался на сером. */
-.client-surface {
-  background-color: #83817b;
+/* ============================================================
+   SURFACE: серый фон (внутренние экраны клиента + кабинет мастера).
+   Текст — кремовый, карточки/инпуты — чуть темнее серого.
+   ============================================================ */
+.surface-gray {
+  background-color: var(--color-gray);
+  color: var(--color-light);
 }
-.client-surface .text-muted {
-  color: rgba(255, 255, 255, 0.74);
+.surface-gray .text-white {
+  color: var(--color-light);
 }
-.client-surface .text-hint {
-  color: rgba(255, 255, 255, 0.52);
+.surface-gray .text-muted {
+  color: rgba(255, 253, 237, 0.74);
 }
-.client-surface .placeholder-hint::placeholder {
-  color: rgba(255, 255, 255, 0.52);
+.surface-gray .text-hint {
+  color: rgba(255, 253, 237, 0.5);
+}
+.surface-gray .placeholder-hint::placeholder {
+  color: rgba(255, 253, 237, 0.5);
+}
+.surface-gray .bg-card {
+  background-color: #656560;
+}
+.surface-gray .bg-card-2 {
+  background-color: #5d5d58;
+}
+.surface-gray .border-line {
+  border-color: rgba(255, 253, 237, 0.18);
+}
+
+/* ============================================================
+   SURFACE: кремовый фон (главный экран).
+   ============================================================ */
+.surface-cream {
+  background-color: var(--color-light);
+  color: #3a3a37;
 }

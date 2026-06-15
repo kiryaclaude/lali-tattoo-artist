@@ -10,6 +10,7 @@
 
 export const CLIENT_ROUTES = {
   HOME: '/',
+  PROFILE: '/profile',
   FORM_SKETCH: '/form/sketch',
   FORM_PLACEMENT: '/form/placement',
   FORM_SIZE: '/form/size',

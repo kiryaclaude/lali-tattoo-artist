@@ -17,15 +17,19 @@ export default {
         muted: '#8C8C92',      // secondary text / subtitles
         hint: '#5E5E63',       // placeholders / disabled hints
 
-        // Brand (green accent)
+        // Brand (sage green accent) — LALI palette
         brand: {
-          light: '#82C9A4',
-          DEFAULT: '#6FBF93',
-          dark: '#58A87B',
-          muted: '#46544C',    // disabled primary button
-          tint: '#1B2A22',     // green-tinted surfaces (icon circle, selected chip)
-          contrast: '#0E1A13', // text/icon on a brand-filled surface
+          light: '#BCCBB5',
+          DEFAULT: '#ABBDA3',
+          dark: '#93A88A',
+          muted: '#7E8C77',    // disabled primary button
+          tint: '#C5D2BF',     // green-tinted surfaces (icon circle, selected chip)
+          contrast: '#2F3A2B', // text/icon on a brand-filled surface
         },
+
+        // LALI palette
+        cream: '#FFFDED',
+        graybg: '#757575',
 
         // Warning (parental-consent notice)
         warn: {
@@ -50,7 +54,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        sans: ['Inter', 'Segoe UI', '-apple-system', 'BlinkMacSystemFont', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
         mono: ['Menlo', 'Monaco', 'Courier New', 'monospace'],
       },
     },

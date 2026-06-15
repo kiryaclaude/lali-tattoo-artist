@@ -19,7 +19,7 @@ export const MasterLayout: React.FC<MasterLayoutProps> = ({
   showHeader = true,
 }) => {
   return (
-    <div className="flex min-h-screen bg-page text-white">
+    <div className="flex min-h-screen surface-gray text-white">
       {/* Sidebar будет добавлен в следующем этапе */}
       {showSidebar && (
         <aside className="hidden md:block w-64 bg-card border-r border-line">

@@ -4,6 +4,7 @@
  */
 
 export { ClientHome } from './ClientHome';
+export { ClientProfile } from './ClientProfile';
 export { SketchUpload } from './SketchUpload';
 export { PlacementSelect } from './PlacementSelect';
 export { SizeInput } from './SizeInput';

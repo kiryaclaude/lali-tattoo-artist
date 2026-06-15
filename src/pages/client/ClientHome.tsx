@@ -1,6 +1,7 @@
 /**
- * pages/client/Home.tsx
- * Главный экран клиента: сплэш-логотип, список заявок и кнопка новой заявки.
+ * pages/client/ClientHome.tsx
+ * Главный экран клиента (кремовый): лого, заголовок, процесс записи, кнопка.
+ * Заявки клиента вынесены в Профиль.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -12,50 +13,34 @@ import {
   orderService,
 } from '../../services';
 import { CLIENT_ROUTES } from '../../routes';
-import { Button } from '../../components/ui';
 import { useNotification } from '../../store';
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
-import { formatPlacement, formatSize, formatTimeAgo } from '../../utils';
-import type { Order } from '../../types';
 
 const MAX_ACTIVE_ORDERS = 3;
-const isActive = (o: Order) =>
-  o.status !== 'rejected' && o.status !== 'cancelled';
+
+const STEPS = [
+  'Загрузите эскиз или опишите идею',
+  'Выберите место и размер',
+  'Заполните анкету и отправьте заявку',
+];
 
 export const ClientHome: React.FC = () => {
   const { navigate } = useNav();
   const notify = useNotification();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [activeCount, setActiveCount] = useState(0);
 
-  // Скрываем нативные кнопки Telegram на главной
-  // (используем только зелёную кнопку в интерфейсе)
   useEffect(() => {
     hideBackButton();
     hideMainButton();
-  }, []);
-
-  // Загружаем заявки клиента с сервера
-  useEffect(() => {
-    let alive = true;
-    orderService.getClientOrders().then((res) => {
-      if (alive && res.success && res.data) {
-        setOrders(res.data);
-      }
+    orderService.getActiveCount().then((r) => {
+      if (r.success && r.data) setActiveCount(r.data.count);
     });
-    return () => {
-      alive = false;
-    };
   }, []);
 
-  const activeCount = orders.filter(isActive).length;
   const canCreate = activeCount < MAX_ACTIVE_ORDERS;
-  const hasOrders = orders.length > 0;
 
-  const handleStartForm = () => {
+  const handleStart = () => {
     if (!canCreate) {
-      notify.error(
-        `Достигнут лимит: максимум ${MAX_ACTIVE_ORDERS} активные заявки`
-      );
+      notify.error(`Достигнут лимит: максимум ${MAX_ACTIVE_ORDERS} активные заявки`);
       return;
     }
     selectionHaptic();
@@ -63,73 +48,78 @@ export const ClientHome: React.FC = () => {
   };
 
   return (
-    // Сплэш: логотип во весь экран + контент снизу.
-    // fixed inset-0 — выходим за паддинги ClientLayout на весь вьюпорт.
-    <div className="fixed inset-0 mx-auto max-w-md bg-page overflow-hidden">
-      {/* Подложка: размытая текстура заполняет экран при любой пропорции */}
-      <img
-        src="/lali-logo.jpg"
-        aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-70"
-      />
-      {/* Логотип целиком по центру (не обрезается) */}
-      <img
-        src="/lali-logo.jpg"
-        alt="LALI — tattoo artist"
-        className="absolute inset-0 w-full h-full object-contain"
-      />
-
-      {/* Затемнение снизу для читаемости контента */}
-      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-page via-page/85 to-transparent" />
-
-      {/* Контент снизу */}
-      <div className="absolute inset-x-0 bottom-0 px-6 pb-8 pt-4 space-y-4">
-        {hasOrders && (
-          <div className="space-y-2 max-h-[42vh] overflow-y-auto">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted">
-              Мои заявки
-            </p>
-            {orders.map((o) => (
-              <button
-                key={o.id}
-                onClick={() =>
-                  navigate(CLIENT_ROUTES.ORDER_DETAIL.replace(':orderId', o.id))
-                }
-                className="w-full text-left flex items-center justify-between gap-3 rounded-2xl bg-card/80 backdrop-blur border border-line px-4 py-3 hover:bg-card transition-colors"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {formatPlacement(o.placement)} ·{' '}
-                    {formatSize(o.size.height, o.size.width)}
-                  </p>
-                  <p className="text-xs text-muted mt-0.5">
-                    {formatTimeAgo(new Date(o.createdAt))}
-                  </p>
-                </div>
-                <span
-                  className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                    ORDER_STATUS_COLORS[o.status] || ''
-                  }`}
-                >
-                  {ORDER_STATUS_LABELS[o.status] || o.status}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          onClick={handleStartForm}
-          disabled={!canCreate}
+    <div className="flex-1 flex flex-col">
+      {/* Шапка-лого + заголовок */}
+      <div className="text-center pt-6">
+        <p
+          className="uppercase text-xs font-medium"
+          style={{ letterSpacing: '0.22em', color: '#9a9a92' }}
         >
-          {hasOrders ? 'Новая заявка' : 'Начать запись'}
-        </Button>
+          LALI tattoo artist
+        </p>
+        <h1
+          className="mt-3 font-light leading-[1.1]"
+          style={{ fontSize: '33px', color: '#4a4a47' }}
+        >
+          Индивидуальный подбор тату
+        </h1>
+        <div
+          className="mx-auto my-5"
+          style={{ width: '40px', height: '2px', background: '#ABBDA3' }}
+        />
+        <p style={{ fontSize: '15px', color: '#8a8a82', lineHeight: 1.5 }}>
+          Запись к мастеру
+          <br />в несколько шагов
+        </p>
+      </div>
 
+      {/* Процесс записи */}
+      <div
+        className="mt-8 rounded-3xl p-5"
+        style={{ background: '#FFFFFF', border: '1px solid #efeede' }}
+      >
+        <p
+          className="uppercase text-xs font-semibold mb-3"
+          style={{ letterSpacing: '0.1em', color: '#9a9a92' }}
+        >
+          Процесс записи
+        </p>
+        <div className="space-y-1">
+          {STEPS.map((text, i) => (
+            <div key={i} className="flex items-start gap-3 py-2">
+              <div
+                className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs"
+                style={{ border: '1px solid #dad9cd', color: '#9a9a92' }}
+              >
+                {i + 1}
+              </div>
+              <p style={{ fontSize: '14px', color: '#5a5a55', paddingTop: '3px' }}>
+                {text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Кнопка записи */}
+      <div className="mt-auto pt-8">
+        <button
+          onClick={handleStart}
+          disabled={!canCreate}
+          className="w-full rounded-2xl py-4 font-semibold transition-opacity"
+          style={{
+            fontSize: '16px',
+            background: canCreate ? '#ABBDA3' : '#cdd5c8',
+            color: '#FFFFFF',
+          }}
+        >
+          Начать запись
+        </button>
         {!canCreate && (
-          <p className="text-xs text-center text-muted">
+          <p
+            className="text-center text-xs mt-3"
+            style={{ color: '#9a9a92' }}
+          >
             Достигнут лимит: максимум {MAX_ACTIVE_ORDERS} активные заявки.
             Дождитесь ответа мастера.
           </p>

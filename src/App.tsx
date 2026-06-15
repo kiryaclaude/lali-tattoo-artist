@@ -50,6 +50,7 @@ function resolveUserRole(telegramId?: number): UserRole {
 // Client Pages
 import {
   ClientHome,
+  ClientProfile,
   SketchUpload,
   PlacementSelect,
   SizeInput,
@@ -113,6 +114,14 @@ const App: React.FC = () => {
               element={
                 <ClientLayout>
                   <ClientHome />
+                </ClientLayout>
+              }
+            />
+            <Route
+              path={CLIENT_ROUTES.PROFILE}
+              element={
+                <ClientLayout>
+                  <ClientProfile />
                 </ClientLayout>
               }
             />
