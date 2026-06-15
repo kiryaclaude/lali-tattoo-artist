@@ -50,44 +50,12 @@ export const ClientHome: React.FC = () => {
     <div className="flex-1 flex flex-col">
       {/* Логотип */}
       <div className="pt-4">
-        <div className="rounded-3xl bg-white px-6 pt-6 pb-7 flex flex-col items-center">
-          <svg
-            width="150"
-            height="26"
-            viewBox="0 0 150 26"
-            aria-hidden="true"
-            className="mb-1"
-          >
-            <path
-              d="M6 19 C40 7, 78 6, 104 13 C116 16, 128 16, 124 8 C121 2, 112 4, 116 12 C119 18, 130 19, 140 14"
-              fill="none"
-              stroke="#A6BE9A"
-              strokeWidth="1.1"
-              strokeLinecap="round"
-            />
-          </svg>
-          <div
-            style={{
-              fontSize: '52px',
-              fontWeight: 300,
-              letterSpacing: '7px',
-              color: '#6f6f6f',
-              lineHeight: 1,
-            }}
-          >
-            LALI<span style={{ color: '#6f6f6f' }}>.</span>
-          </div>
-          <div
-            className="mt-2"
-            style={{
-              fontSize: '15px',
-              letterSpacing: '5px',
-              color: '#A6BE9A',
-              fontWeight: 400,
-            }}
-          >
-            tattoo artist
-          </div>
+        <div className="rounded-3xl bg-white px-5 py-4">
+          <img
+            src="/lali-logo-mark.jpg"
+            alt="LALI — tattoo artist"
+            className="w-full h-auto"
+          />
         </div>
       </div>
 
