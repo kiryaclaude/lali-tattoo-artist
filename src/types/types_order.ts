@@ -97,6 +97,10 @@ export interface Order {
   prepayment?: Price;
   paymentProofUrl?: string;
 
+  // Дата и время сеанса
+  proposedSlots?: string[]; // ISO-строки, предложенные мастером
+  selectedSlot?: string; // выбранный клиентом слот
+
   // Metadata
   createdAt: Date;
   updatedAt: Date;

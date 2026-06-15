@@ -6,7 +6,14 @@
 import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { verifyInitData, sendMessage, hasBotToken } from './telegram.mjs';
+import {
+  verifyInitData,
+  sendMessage,
+  hasBotToken,
+  sendWelcome,
+  setWebhook,
+  WEBHOOK_SECRET,
+} from './telegram.mjs';
 import * as db from './db.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -22,6 +29,18 @@ const isMaster = (id) => MASTER_IDS.includes(String(id));
 const newId = () =>
   `order_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 const fmtPrice = (p) => (p ? `${p.amount.toLocaleString('ru-RU')} ₽` : '');
+const fmtSlot = (iso) => {
+  try {
+    return new Intl.DateTimeFormat('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+};
 
 const app = express();
 app.use(express.json({ limit: '6mb' })); // запас под изображения (эскиз/чек)
@@ -243,17 +262,56 @@ app.post('/api/orders/:id/price', auth, requireMaster, async (req, res) => {
     const amount = Number(req.body?.amount);
     if (!amount || amount <= 0)
       return res.status(400).json({ success: false, error: 'bad_amount' });
+    const slots = Array.isArray(req.body?.slots)
+      ? req.body.slots.filter((s) => typeof s === 'string').slice(0, 10)
+      : [];
     const totalPrice = { amount, currency: 'RUB' };
     const prepayment = { amount: Math.ceil(amount * 0.2), currency: 'RUB' };
-    const order = await db.setOrderPrice(req.params.id, totalPrice, prepayment);
+    const order = await db.setOrderPrice(
+      req.params.id,
+      totalPrice,
+      prepayment,
+      slots
+    );
     if (!order) return res.status(404).json({ success: false, error: 'not_found' });
 
+    const slotsLine = slots.length
+      ? `\n\n🗓 Выберите удобное время в приложении (${slots.length} ${
+          slots.length === 1 ? 'вариант' : 'варианта'
+        }).`
+      : '';
     sendMessage(
       order.clientId,
       `💰 <b>Мастер оценил вашу тату</b>\n\nСтоимость: ${fmtPrice(totalPrice)}\n` +
-        `Предоплата для записи: ${fmtPrice(prepayment)}`
+        `Предоплата для записи: ${fmtPrice(prepayment)}${slotsLine}`
     );
     ok(res, order);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'server_error' });
+  }
+});
+
+// Клиент выбирает предложенный слот времени
+app.post('/api/orders/:id/select-slot', auth, async (req, res) => {
+  try {
+    const order = await db.getOrder(req.params.id);
+    if (!order) return res.status(404).json({ success: false, error: 'not_found' });
+    if (String(order.clientId) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, error: 'forbidden' });
+    }
+    const slot = req.body?.slot;
+    if (!slot || !(order.proposedSlots || []).includes(slot)) {
+      return res.status(400).json({ success: false, error: 'bad_slot' });
+    }
+    const updated = await db.selectSlot(req.params.id, slot);
+    for (const mid of MASTER_IDS) {
+      sendMessage(
+        mid,
+        `🗓 <b>Клиент выбрал время</b>\n${updated.clientName || 'Клиент'}: ${fmtSlot(slot)}`
+      );
+    }
+    ok(res, updated);
   } catch (e) {
     console.error(e);
     res.status(500).json({ success: false, error: 'server_error' });
@@ -303,9 +361,12 @@ app.post('/api/orders/:id/confirm', auth, requireMaster, async (req, res) => {
   try {
     const order = await db.confirmOrder(req.params.id);
     if (!order) return res.status(404).json({ success: false, error: 'not_found' });
+    const when = order.selectedSlot
+      ? `\n🗓 ${fmtSlot(order.selectedSlot)}`
+      : '';
     sendMessage(
       order.clientId,
-      `✅ <b>Запись подтверждена!</b>\nМастер ждёт вас. Спасибо!`
+      `✅ <b>Запись подтверждена!</b>${when}\nМастер ждёт вас. Спасибо!`
     );
     ok(res, order);
   } catch (e) {
@@ -333,6 +394,21 @@ app.post('/api/broadcast', auth, requireMaster, async (req, res) => {
   }
 });
 
+// ============================ TELEGRAM WEBHOOK ============================
+// Приём апдейтов от бота (команда /start и т.п.)
+app.post('/api/tg/webhook', (req, res) => {
+  if (req.get('X-Telegram-Bot-Api-Secret-Token') !== WEBHOOK_SECRET) {
+    return res.sendStatus(401);
+  }
+  res.sendStatus(200); // отвечаем сразу, обработка — асинхронно
+
+  const msg = req.body?.message;
+  const text = typeof msg?.text === 'string' ? msg.text.trim() : '';
+  if (msg?.chat?.id && /^\/start(@\w+)?$/.test(text)) {
+    sendWelcome(msg.chat.id).catch(() => {});
+  }
+});
+
 // ============================ STATIC ============================
 app.use(express.static(DIST));
 app.get('*', (_req, res) => res.sendFile(join(DIST, 'index.html')));
@@ -340,9 +416,10 @@ app.get('*', (_req, res) => res.sendFile(join(DIST, 'index.html')));
 // ============================ START ============================
 db.initSchema()
   .then(() => {
-    app.listen(PORT, '0.0.0.0', () =>
-      console.log(`Server listening on 0.0.0.0:${PORT} (bot: ${hasBotToken()})`)
-    );
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server listening on 0.0.0.0:${PORT} (bot: ${hasBotToken()})`);
+      setWebhook();
+    });
   })
   .catch((e) => {
     console.error('DB init failed:', e);

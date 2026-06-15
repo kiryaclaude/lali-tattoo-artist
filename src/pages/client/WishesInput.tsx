@@ -109,7 +109,8 @@ export const WishesInput: React.FC = () => {
           <div className="flex gap-3">
             <div className="text-brand-contrast flex-shrink-0">ℹ️</div>
             <p className="text-sm text-brand-contrast">
-              После отправки мастер изучит вашу заявку и рассчитает стоимость индивидуально.
+              После отправки мастер рассчитает стоимость и предложит удобные дату
+              и время сеанса — вы выберете подходящий вариант.
             </p>
           </div>
         </Card>

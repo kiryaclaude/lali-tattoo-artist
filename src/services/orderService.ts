@@ -60,14 +60,21 @@ class OrderService {
     return apiPost<Order>(`/orders/${orderId}/reply`, { message });
   }
 
-  /** Назначить стоимость. */
+  /** Назначить стоимость (+ предложить слоты времени). */
   async setOrderPrice(
     orderId: string,
-    totalPrice: Price
+    totalPrice: Price,
+    slots: string[] = []
   ): Promise<ApiResponse<Order>> {
     return apiPost<Order>(`/orders/${orderId}/price`, {
       amount: totalPrice.amount,
+      slots,
     });
+  }
+
+  /** Клиент выбирает предложенный слот времени. */
+  async selectSlot(orderId: string, slot: string): Promise<ApiResponse<Order>> {
+    return apiPost<Order>(`/orders/${orderId}/select-slot`, { slot });
   }
 
   /** Запросить уточнение у клиента. */

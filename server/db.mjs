@@ -54,6 +54,12 @@ export async function initSchema() {
     `ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_proof_url TEXT;`
   );
   await pool.query(
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS proposed_slots JSONB DEFAULT '[]'::jsonb;`
+  );
+  await pool.query(
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS selected_slot TEXT;`
+  );
+  await pool.query(
     `CREATE INDEX IF NOT EXISTS idx_orders_client ON orders(client_id);`
   );
   await pool.query(
@@ -81,6 +87,8 @@ function rowToOrder(r) {
     totalPrice: r.total_price || undefined,
     prepayment: r.prepayment || undefined,
     paymentProofUrl: r.payment_proof_url || undefined,
+    proposedSlots: r.proposed_slots || [],
+    selectedSlot: r.selected_slot || undefined,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -156,12 +164,23 @@ export async function getAllOrders() {
   return rows.map(rowToOrder);
 }
 
-export async function setOrderPrice(id, totalPrice, prepayment) {
+export async function setOrderPrice(id, totalPrice, prepayment, slots = []) {
   const { rows } = await pool.query(
     `UPDATE orders SET total_price = $2, prepayment = $3,
+       proposed_slots = $4::jsonb, selected_slot = NULL,
        status = 'price_set', updated_at = now()
      WHERE id = $1 RETURNING *`,
-    [id, totalPrice, prepayment]
+    [id, totalPrice, prepayment, JSON.stringify(slots || [])]
+  );
+  return rowToOrder(rows[0]);
+}
+
+/** Клиент выбрал предложенный слот времени. */
+export async function selectSlot(id, slot) {
+  const { rows } = await pool.query(
+    `UPDATE orders SET selected_slot = $2, updated_at = now()
+     WHERE id = $1 RETURNING *`,
+    [id, slot]
   );
   return rowToOrder(rows[0]);
 }

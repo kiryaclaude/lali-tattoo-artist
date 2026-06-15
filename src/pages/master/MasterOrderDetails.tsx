@@ -16,7 +16,7 @@ import {
 } from '../../components/ui';
 import { NumberInput } from '../../components/forms';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
-import { formatPlacement, formatSize, formatPrice } from '../../utils';
+import { formatPlacement, formatSize, formatPrice, formatSlot } from '../../utils';
 import { useNav } from '../../hooks';
 import { MASTER_ROUTES } from '../../routes';
 
@@ -35,6 +35,8 @@ export const MasterOrderDetails: React.FC = () => {
 
   const [priceModal, setPriceModal] = useState(false);
   const [priceAmount, setPriceAmount] = useState<number | null>(null);
+  const [slots, setSlots] = useState<string[]>([]);
+  const [slotInput, setSlotInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [feedbackModal, setFeedbackModal] = useState(false);
@@ -68,6 +70,20 @@ export const MasterOrderDetails: React.FC = () => {
 
   const order = selectedOrder;
 
+  const addSlot = () => {
+    if (!slotInput) return;
+    const iso = new Date(slotInput).toISOString();
+    if (slots.includes(iso)) {
+      setSlotInput('');
+      return;
+    }
+    setSlots((prev) => [...prev, iso].sort());
+    setSlotInput('');
+  };
+
+  const removeSlot = (iso: string) =>
+    setSlots((prev) => prev.filter((s) => s !== iso));
+
   const handleSetPrice = async () => {
     if (!priceAmount || priceAmount <= 0) {
       notify.error('Укажите корректную цену');
@@ -76,15 +92,17 @@ export const MasterOrderDetails: React.FC = () => {
     setIsSubmitting(true);
     try {
       const prepayment = { amount: Math.ceil(priceAmount * 0.2), currency: 'RUB' };
-      const res = await orderService.setOrderPrice(orderId, {
-        amount: priceAmount,
-        currency: 'RUB',
-      });
+      const res = await orderService.setOrderPrice(
+        orderId,
+        { amount: priceAmount, currency: 'RUB' },
+        slots
+      );
       if (res.success) {
         updateOrderPrice(orderId, { amount: priceAmount, currency: 'RUB' }, prepayment);
-        notify.success('Цена установлена');
+        notify.success('Отправлено клиенту');
         setPriceModal(false);
         setPriceAmount(null);
+        setSlots([]);
         goBack();
       }
     } catch {
@@ -297,6 +315,36 @@ export const MasterOrderDetails: React.FC = () => {
         </Card>
       )}
 
+      {/* Дата и время (если предлагали слоты) */}
+      {!!(order.proposedSlots && order.proposedSlots.length) && (
+        <Card>
+          <p className="text-xs font-semibold text-muted uppercase mb-2">
+            Дата и время
+          </p>
+          {order.selectedSlot ? (
+            <p className="text-lg font-bold text-brand">
+              {formatSlot(order.selectedSlot)}
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-muted mb-2">
+                Предложено {order.proposedSlots.length} — клиент ещё не выбрал
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {order.proposedSlots.map((s) => (
+                  <span
+                    key={s}
+                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-card-2 text-white"
+                  >
+                    {formatSlot(s)}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+        </Card>
+      )}
+
       {/* Чек об оплате (если клиент прислал) */}
       {order.paymentProofUrl && (
         <Card>
@@ -425,6 +473,46 @@ export const MasterOrderDetails: React.FC = () => {
             </span>
           </p>
         ) : null}
+
+        {/* Слоты времени */}
+        <div className="mt-5">
+          <p className="text-xs font-semibold text-muted uppercase mb-2">
+            Предложите время
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="datetime-local"
+              value={slotInput}
+              onChange={(e) => setSlotInput(e.target.value)}
+              style={{ colorScheme: 'dark' }}
+              className="flex-1 min-w-0 bg-card border border-line rounded-xl px-3 py-2.5 text-white text-sm"
+            />
+            <Button variant="secondary" onClick={addSlot}>
+              Добавить
+            </Button>
+          </div>
+          {slots.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {slots.map((s) => (
+                <div
+                  key={s}
+                  className="flex items-center justify-between bg-card rounded-xl px-3 py-2"
+                >
+                  <span className="text-sm text-white">{formatSlot(s)}</span>
+                  <button
+                    onClick={() => removeSlot(s)}
+                    className="text-red-400 text-xs font-medium"
+                  >
+                    Убрать
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-hint mt-2">
+            Необязательно. Клиент выберет один из предложенных вариантов.
+          </p>
+        </div>
       </Modal>
 
       {/* Модалка уточнения */}

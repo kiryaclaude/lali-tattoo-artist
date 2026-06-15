@@ -44,10 +44,11 @@ export const SuccessScreen: React.FC = () => {
       {/* Title */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-white">
-          Заявка получена
+          Запись получена
         </h1>
         <p className="text-base text-muted">
-          Мастер изучит эскиз, рассчитает стоимость и свяжется с вами для согласования деталей.
+          Мастер изучит эскиз, рассчитает стоимость и предложит удобные дату и
+          время сеанса — вы выберете подходящий вариант.
         </p>
       </div>
 

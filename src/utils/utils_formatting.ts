@@ -72,6 +72,22 @@ export const formatDateTime = (date: Date): string => {
 };
 
 /**
+ * Форматирует слот времени сеанса (16 июня, 14:00)
+ */
+export const formatSlot = (iso: string): string => {
+  try {
+    return new Intl.DateTimeFormat('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+};
+
+/**
  * Форматирует время в прошедшем времени (2 часа назад)
  */
 export const formatTimeAgo = (date: Date): string => {

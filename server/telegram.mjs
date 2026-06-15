@@ -7,6 +7,16 @@ import crypto from 'node:crypto';
 const BOT_TOKEN = process.env.BOT_TOKEN || '';
 const API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
+const PUBLIC_DOMAIN =
+  process.env.RAILWAY_PUBLIC_DOMAIN ||
+  'lali-tattoo-artist-production.up.railway.app';
+export const APP_URL = `https://${PUBLIC_DOMAIN}`;
+
+// Секрет для проверки входящих webhook-запросов от Telegram
+export const WEBHOOK_SECRET = BOT_TOKEN
+  ? crypto.createHash('sha256').update(BOT_TOKEN).digest('hex').slice(0, 40)
+  : 'dev-secret';
+
 /**
  * Проверяет подпись initData от Telegram WebApp.
  * Возвращает объект пользователя { id, first_name, username, ... } или null.
@@ -59,7 +69,7 @@ export function verifyInitData(initData) {
  * Отправляет текстовое сообщение пользователю/в чат.
  * Возвращает true при успехе. Ошибки не бросает (для рассылки).
  */
-export async function sendMessage(chatId, text) {
+export async function sendMessage(chatId, text, extra = {}) {
   if (!BOT_TOKEN) {
     console.warn('[telegram] BOT_TOKEN не задан — сообщение не отправлено');
     return false;
@@ -73,6 +83,7 @@ export async function sendMessage(chatId, text) {
         text,
         parse_mode: 'HTML',
         disable_web_page_preview: true,
+        ...extra,
       }),
     });
     const data = await res.json();
@@ -83,6 +94,54 @@ export async function sendMessage(chatId, text) {
     return true;
   } catch (e) {
     console.warn('[telegram] sendMessage error:', e.message);
+    return false;
+  }
+}
+
+/**
+ * Приветственное сообщение при /start — с кнопкой открытия мини-аппа.
+ */
+export async function sendWelcome(chatId) {
+  const text =
+    '<b>LALI — tattoo artist</b>\n\n' +
+    'Запишитесь на тату за пару минут:\n' +
+    '• загрузите эскиз или опишите идею\n' +
+    '• выберите место и размер\n' +
+    '• заполните короткую анкету\n\n' +
+    'Мастер изучит заявку, рассчитает стоимость и свяжется с вами здесь.\n\n' +
+    'Нажмите кнопку ниже, чтобы открыть запись 👇';
+  return sendMessage(chatId, text, {
+    reply_markup: {
+      inline_keyboard: [[{ text: '✍️ Записаться', web_app: { url: APP_URL } }]],
+    },
+  });
+}
+
+/**
+ * Регистрирует webhook у Telegram (чтобы получать /start и др. сообщения).
+ */
+export async function setWebhook() {
+  if (!BOT_TOKEN) return false;
+  const url = `${APP_URL}/api/tg/webhook`;
+  try {
+    const res = await fetch(`${API}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url,
+        secret_token: WEBHOOK_SECRET,
+        allowed_updates: ['message'],
+        drop_pending_updates: false,
+      }),
+    });
+    const data = await res.json();
+    console.log(
+      '[telegram] setWebhook:',
+      data.ok ? `ok -> ${url}` : data.description
+    );
+    return !!data.ok;
+  } catch (e) {
+    console.warn('[telegram] setWebhook error:', e.message);
     return false;
   }
 }

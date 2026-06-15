@@ -14,6 +14,7 @@ import {
   formatSize,
   formatPrice,
   formatTimeAgo,
+  formatSlot,
   compressImageToDataUrl,
 } from '../../utils';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
@@ -30,6 +31,25 @@ export const ClientOrderDetails: React.FC = () => {
   const [replyModal, setReplyModal] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [replying, setReplying] = useState(false);
+  const [selectingSlot, setSelectingSlot] = useState(false);
+
+  const handleSelectSlot = async (slot: string) => {
+    if (!orderId) return;
+    setSelectingSlot(true);
+    try {
+      const res = await orderService.selectSlot(orderId, slot);
+      if (res.success && res.data) {
+        setOrder(res.data);
+        notify.success('Время выбрано');
+      } else {
+        notify.error('Не удалось выбрать время');
+      }
+    } catch {
+      notify.error('Ошибка при выборе времени');
+    } finally {
+      setSelectingSlot(false);
+    }
+  };
 
   const load = async () => {
     if (!orderId) return;
@@ -282,6 +302,33 @@ export const ClientOrderDetails: React.FC = () => {
               Реквизиты уточняйте у мастера.
             </p>
           </div>
+        </Card>
+      )}
+
+      {/* Дата и время сеанса */}
+      {!!(order.proposedSlots && order.proposedSlots.length) && (
+        <Card>
+          <p className="text-xs font-semibold text-muted uppercase mb-3">
+            {order.selectedSlot ? 'Дата и время' : 'Выберите удобное время'}
+          </p>
+          {order.selectedSlot ? (
+            <p className="text-lg font-bold text-brand">
+              {formatSlot(order.selectedSlot)}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {order.proposedSlots.map((s) => (
+                <button
+                  key={s}
+                  disabled={selectingSlot}
+                  onClick={() => handleSelectSlot(s)}
+                  className="w-full text-left rounded-xl border border-line bg-card px-4 py-3 text-white font-medium hover:bg-card-2 transition-colors disabled:opacity-60"
+                >
+                  {formatSlot(s)}
+                </button>
+              ))}
+            </div>
+          )}
         </Card>
       )}
 
