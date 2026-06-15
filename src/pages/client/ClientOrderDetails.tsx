@@ -183,6 +183,41 @@ export const ClientOrderDetails: React.FC = () => {
         ))}
       </div>
 
+      {/* Здоровье */}
+      {(order.health?.contraindications?.length ||
+        order.health?.otherHealth) && (
+        <Card>
+          <p className="text-xs font-semibold text-muted uppercase mb-2">
+            Здоровье
+          </p>
+          {!!order.health?.contraindications?.length && (
+            <div className="flex flex-wrap gap-2">
+              {order.health.contraindications.map((c) => {
+                const ok = c === 'Нет противопоказаний';
+                return (
+                  <span
+                    key={c}
+                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                    style={
+                      ok
+                        ? { background: 'rgba(171,189,163,0.3)', color: '#2F3A2B' }
+                        : { background: 'rgba(224,75,74,0.25)', color: '#ffd9d9' }
+                    }
+                  >
+                    {c}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+          {order.health?.otherHealth && (
+            <p className="text-white text-sm mt-3 whitespace-pre-wrap break-words">
+              {order.health.otherHealth}
+            </p>
+          )}
+        </Card>
+      )}
+
       {/* Пожелания */}
       {order.wishes && (
         <Card>
