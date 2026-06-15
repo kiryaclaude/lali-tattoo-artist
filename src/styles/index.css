@@ -37,28 +37,28 @@ body {
    ============================================================ */
 .surface-gray {
   background-color: var(--color-gray);
-  color: var(--color-light);
+  color: #ffffff;
 }
 .surface-gray .text-white {
-  color: var(--color-light);
+  color: #ffffff;
 }
 .surface-gray .text-muted {
-  color: rgba(255, 253, 237, 0.74);
+  color: rgba(255, 255, 255, 0.85);
 }
 .surface-gray .text-hint {
-  color: rgba(255, 253, 237, 0.5);
+  color: rgba(255, 255, 255, 0.62);
 }
 .surface-gray .placeholder-hint::placeholder {
-  color: rgba(255, 253, 237, 0.5);
+  color: rgba(255, 255, 255, 0.6);
 }
 .surface-gray .bg-card {
-  background-color: #656560;
+  background-color: #686863;
 }
 .surface-gray .bg-card-2 {
-  background-color: #5d5d58;
+  background-color: #606059;
 }
 .surface-gray .border-line {
-  border-color: rgba(255, 253, 237, 0.18);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* ============================================================

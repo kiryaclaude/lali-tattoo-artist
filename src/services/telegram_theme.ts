@@ -47,6 +47,23 @@ export function applyTelegramTheme(): void {
 }
 
 /**
+ * Красит шапку и фон Telegram под бренд (серый), чтобы не было чёрной полосы.
+ */
+export function setTelegramBrandColors(): void {
+  const tg = getTgApp() as unknown as {
+    setHeaderColor?: (c: string) => void;
+    setBackgroundColor?: (c: string) => void;
+  } | null;
+  if (!tg) return;
+  try {
+    tg.setHeaderColor?.('#757575');
+    tg.setBackgroundColor?.('#757575');
+  } catch {
+    // старые версии Telegram — игнорируем
+  }
+}
+
+/**
  * React hook для применения Telegram темы
  */
 import { useEffect } from 'react';
@@ -54,6 +71,7 @@ import { useEffect } from 'react';
 export function useTelegramTheme(): void {
   useEffect(() => {
     applyTelegramTheme();
+    setTelegramBrandColors();
 
     // Переприменяем тему при изменении viewport
     const handleResize = () => {

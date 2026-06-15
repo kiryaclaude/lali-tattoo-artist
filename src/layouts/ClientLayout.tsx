@@ -49,11 +49,7 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ children }) => {
   const showTabBar = isHome || isProfile;
 
   return (
-    <div
-      className={`flex flex-col min-h-screen ${
-        isHome ? 'surface-cream' : 'surface-gray'
-      }`}
-    >
+    <div className="flex flex-col min-h-screen surface-gray">
       <main
         className={`flex-1 flex flex-col w-full max-w-md mx-auto px-6 py-5 ${
           showTabBar ? 'pb-24' : ''
@@ -63,10 +59,14 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ children }) => {
       </main>
 
       {showTabBar && (
-        <nav className="fixed inset-x-0 bottom-0 z-30 bg-cream border-t border-black/5">
+        <nav
+          className="fixed inset-x-0 bottom-0 z-30 border-t"
+          style={{ background: '#6c6c67', borderColor: 'rgba(255,255,255,0.15)' }}
+        >
           <div className="max-w-md mx-auto flex">
             {TABS.map((tab) => {
               const active = pathname === tab.path;
+              const color = active ? '#ABBDA3' : 'rgba(255,255,255,0.7)';
               return (
                 <button
                   key={tab.path}
@@ -77,17 +77,14 @@ export const ClientLayout: React.FC<ClientLayoutProps> = ({ children }) => {
                     className="w-6 h-6"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke={active ? '#ABBDA3' : '#9a9a92'}
+                    stroke={color}
                     strokeWidth={1.8}
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
                     {tab.icon}
                   </svg>
-                  <span
-                    className="text-xs font-medium"
-                    style={{ color: active ? '#7E9270' : '#9a9a92' }}
-                  >
+                  <span className="text-xs font-medium" style={{ color }}>
                     {tab.label}
                   </span>
                 </button>

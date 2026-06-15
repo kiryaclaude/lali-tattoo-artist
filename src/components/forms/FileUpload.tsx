@@ -122,7 +122,7 @@ export const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
         >
           <div className="w-20 h-20 rounded-full bg-brand-tint flex items-center justify-center mb-5">
             <svg
-              className="w-9 h-9 text-brand-light"
+              className="w-9 h-9 text-brand-contrast"
               fill="none"
               stroke="currentColor"
               strokeWidth={1.8}

@@ -107,8 +107,8 @@ export const WishesInput: React.FC = () => {
 
         <Card className="bg-brand-tint border-brand/30">
           <div className="flex gap-3">
-            <div className="text-brand-light flex-shrink-0">ℹ️</div>
-            <p className="text-sm text-brand-light">
+            <div className="text-brand-contrast flex-shrink-0">ℹ️</div>
+            <p className="text-sm text-brand-contrast">
               После отправки мастер изучит вашу заявку и рассчитает стоимость индивидуально.
             </p>
           </div>

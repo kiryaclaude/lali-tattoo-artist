@@ -27,7 +27,7 @@ export const SuccessScreen: React.FC = () => {
       {/* Success icon */}
       <div className="w-24 h-24 rounded-full bg-brand-tint border-2 border-brand flex items-center justify-center">
         <svg
-          className="w-16 h-16 text-brand"
+          className="w-16 h-16 text-brand-contrast"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

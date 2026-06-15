@@ -117,12 +117,12 @@ export const MasterOrderDetails: React.FC = () => {
   };
 
   const handleReject = async () => {
-    if (!window.confirm('Отклонить эту заявку?')) return;
+    if (!window.confirm('Отклонить эту запись?')) return;
     try {
       const res = await orderService.rejectOrder(orderId, 'Отклонено мастером');
       if (res.success) {
         updateOrderStatus(orderId, 'rejected');
-        notify.success('Заявка отклонена');
+        notify.success('Запись отклонена');
         goBack();
       }
     } catch {
@@ -147,11 +147,11 @@ export const MasterOrderDetails: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Удалить эту заявку безвозвратно?')) return;
+    if (!window.confirm('Удалить эту запись безвозвратно?')) return;
     try {
       const res = await orderService.deleteOrder(orderId);
       if (res.success) {
-        notify.success('Заявка удалена');
+        notify.success('Запись удалена');
         goBack();
       }
     } catch {
@@ -173,7 +173,7 @@ export const MasterOrderDetails: React.FC = () => {
         onClick={goBack}
         className="inline-flex items-center gap-1 text-brand font-medium text-sm"
       >
-        ‹ К заявкам
+        ‹ К записям
       </button>
 
       {/* Header */}
@@ -338,12 +338,12 @@ export const MasterOrderDetails: React.FC = () => {
             Подтвердить запись
           </Button>
           <Button variant="secondary" fullWidth onClick={goBack}>
-            ‹ Вернуться к заявкам
+            ‹ Вернуться к записям
           </Button>
         </div>
       ) : (
         <Button variant="secondary" fullWidth onClick={goBack}>
-          ‹ Вернуться к заявкам
+          ‹ Вернуться к записям
         </Button>
       )}
 
@@ -353,7 +353,7 @@ export const MasterOrderDetails: React.FC = () => {
           onClick={handleDelete}
           className="self-center mx-auto block mt-1 text-sm text-red-400 font-medium"
         >
-          Удалить заявку
+          Удалить запись
         </button>
       )}
 

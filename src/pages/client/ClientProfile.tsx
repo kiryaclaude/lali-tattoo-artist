@@ -43,7 +43,7 @@ export const ClientProfile: React.FC = () => {
 
   const handleNew = () => {
     if (!canCreate) {
-      notify.error(`Достигнут лимит: максимум ${MAX_ACTIVE_ORDERS} активные заявки`);
+      notify.error(`Достигнут лимит: максимум ${MAX_ACTIVE_ORDERS} активные записи`);
       return;
     }
     navigate(CLIENT_ROUTES.FORM_SKETCH);
@@ -70,7 +70,7 @@ export const ClientProfile: React.FC = () => {
       {/* Мои заявки */}
       <div className="flex-1">
         <p className="text-xs font-medium uppercase tracking-wider text-muted mb-3">
-          Мои заявки
+          Мои записи
         </p>
 
         {loading ? (
@@ -79,7 +79,7 @@ export const ClientProfile: React.FC = () => {
           </div>
         ) : orders.length === 0 ? (
           <div className="rounded-2xl border border-line bg-card/40 p-8 text-center">
-            <p className="text-muted text-sm">У вас пока нет заявок</p>
+            <p className="text-muted text-sm">У вас пока нет записей</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -116,11 +116,11 @@ export const ClientProfile: React.FC = () => {
       {/* Новая заявка */}
       <div className="pt-2">
         <Button variant="primary" size="lg" fullWidth onClick={handleNew} disabled={!canCreate}>
-          Новая заявка
+          Новая запись
         </Button>
         {!canCreate && (
           <p className="text-center text-xs mt-3 text-muted">
-            Достигнут лимит: максимум {MAX_ACTIVE_ORDERS} активные заявки.
+            Достигнут лимит: максимум {MAX_ACTIVE_ORDERS} активные записи.
           </p>
         )}
       </div>

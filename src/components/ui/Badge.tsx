@@ -19,10 +19,10 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   const variantStyles = {
     default: 'bg-card text-muted',
-    success: 'bg-brand-tint text-brand-light',
+    success: 'bg-brand-tint text-brand-contrast',
     error: 'bg-red-500/15 text-red-300',
     warning: 'bg-warn-bg text-warn-text',
-    info: 'bg-brand-tint text-brand-light',
+    info: 'bg-brand-tint text-brand-contrast',
   };
 
   return (

@@ -51,7 +51,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
             className={classNames(
               'px-4 py-4 rounded-2xl font-medium transition-colors border text-[15px]',
               value === option.id
-                ? 'bg-brand-tint text-brand-light border-brand'
+                ? 'bg-brand text-brand-contrast border-brand'
                 : 'bg-card text-white border-transparent hover:bg-card-2'
             )}
             type="button"

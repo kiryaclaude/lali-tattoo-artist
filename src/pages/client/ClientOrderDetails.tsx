@@ -73,7 +73,7 @@ export const ClientOrderDetails: React.FC = () => {
   if (!order) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-4">
-        <p className="text-muted">Заявка не найдена</p>
+        <p className="text-muted">Запись не найдена</p>
         <Button variant="secondary" onClick={() => navigate(CLIENT_ROUTES.HOME)}>
           На главную
         </Button>
@@ -111,13 +111,13 @@ export const ClientOrderDetails: React.FC = () => {
 
   const handleDelete = async () => {
     if (!orderId) return;
-    if (!window.confirm('Удалить эту заявку?')) return;
+    if (!window.confirm('Удалить эту запись?')) return;
     const res = await orderService.deleteOrder(orderId);
     if (res.success) {
-      notify.success('Заявка удалена');
+      notify.success('Запись удалена');
       navigate(CLIENT_ROUTES.HOME);
     } else {
-      notify.error('Не удалось удалить заявку');
+      notify.error('Не удалось удалить запись');
     }
   };
 
@@ -134,7 +134,7 @@ export const ClientOrderDetails: React.FC = () => {
       {/* Заголовок */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-white">Ваша заявка</h1>
+          <h1 className="text-2xl font-bold text-white">Ваша запись</h1>
           <p className="text-xs text-muted mt-1">
             {formatTimeAgo(new Date(order.createdAt))}
           </p>
@@ -298,8 +298,7 @@ export const ClientOrderDetails: React.FC = () => {
         <button
           onClick={handleDelete}
           className="self-center mt-2 text-sm text-red-400 font-medium"
-        >
-          Удалить заявку
+        >Удалить запись
         </button>
       )}
 

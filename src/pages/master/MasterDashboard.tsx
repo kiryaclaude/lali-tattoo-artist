@@ -25,9 +25,9 @@ const FILTERS: { key: string | null; label: string }[] = [
 function pluralOrders(n: number): string {
   const m10 = n % 10;
   const m100 = n % 100;
-  if (m10 === 1 && m100 !== 11) return 'заявка';
-  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return 'заявки';
-  return 'заявок';
+  if (m10 === 1 && m100 !== 11) return 'запись';
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return 'записи';
+  return 'записей';
 }
 
 /** Превью эскиза с graceful-фолбэком (битые/мок-ссылки → иконка). */
@@ -151,7 +151,7 @@ export const MasterDashboard: React.FC = () => {
     <div className="space-y-5 max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-white">Заявки</h1>
+        <h1 className="text-2xl font-bold text-white">Записи</h1>
         <button
           onClick={() => setBroadcastOpen(true)}
           className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-card border border-line px-3 py-1.5 text-sm text-white hover:bg-card-2 transition-colors"
@@ -191,7 +191,7 @@ export const MasterDashboard: React.FC = () => {
       {/* Список */}
       {visible.length === 0 ? (
         <div className="rounded-2xl border border-line bg-card/40 text-center py-12">
-          <p className="text-muted">Заявок нет</p>
+          <p className="text-muted">Записей нет</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -252,7 +252,7 @@ export const MasterDashboard: React.FC = () => {
         }
       >
         <p className="text-sm text-muted mb-3">
-          Сообщение получат все клиенты, оставлявшие заявку.
+          Сообщение получат все клиенты, оставлявшие запись.
         </p>
         <Input
           multiline

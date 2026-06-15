@@ -103,7 +103,7 @@ export const SizeInput: React.FC = () => {
                 className="bg-brand/15 border-2 border-brand rounded-md flex items-center justify-center max-w-full max-h-full transition-all duration-200"
                 style={{ width: previewW || 24, height: previewH || 24 }}
               >
-                <span className="text-[11px] font-medium text-brand-light whitespace-nowrap px-1">
+                <span className="text-[11px] font-medium text-white whitespace-nowrap px-1">
                   {widthCm || 0}×{heightCm || 0} см
                 </span>
               </div>
