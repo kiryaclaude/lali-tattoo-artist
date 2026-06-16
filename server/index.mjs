@@ -29,6 +29,12 @@ const isMaster = (id) => MASTER_IDS.includes(String(id));
 const newId = () =>
   `order_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 const fmtPrice = (p) => (p ? `${p.amount.toLocaleString('ru-RU')} ₽` : '');
+const SERVICE_LABELS = {
+  tattoo: 'Запись на тату',
+  coverup: 'Перекрытие',
+  correction: 'Коррекция',
+  consultation: 'Консультация',
+};
 const escapeHtml = (s) =>
   String(s ?? '')
     .replace(/&/g, '&amp;')
@@ -108,9 +114,14 @@ app.post('/api/orders', auth, async (req, res) => {
     }
 
     const b = req.body || {};
+    const allowedServices = ['tattoo', 'coverup', 'correction', 'consultation'];
+    const serviceType = allowedServices.includes(b.serviceType)
+      ? b.serviceType
+      : 'tattoo';
     const order = await db.createOrder({
       id: newId(),
       clientId,
+      serviceType,
       clientName:
         b.clientName ||
         [req.user.first_name, req.user.last_name].filter(Boolean).join(' '),
@@ -135,10 +146,16 @@ app.post('/api/orders', auth, async (req, res) => {
     const username = req.user.username;
     const name = escapeHtml(order.clientName || 'Клиент');
     const mention = `<a href="tg://user?id=${clientId}">${name}</a>`;
+    const svc = SERVICE_LABELS[order.serviceType] || 'Запись';
+    const details =
+      order.serviceType === 'consultation'
+        ? 'бесплатная консультация'
+        : `${escapeHtml(order.placement || '—')} · ${order.size?.width || '?'}×${
+            order.size?.height || '?'
+          } см`;
     const note =
-      `🆕 <b>Новая заявка</b>\n` +
-      `${mention} · ${escapeHtml(order.placement)} · ` +
-      `${order.size.width}×${order.size.height} см` +
+      `🆕 <b>Новая запись · ${svc}</b>\n` +
+      `${mention} · ${details}` +
       (order.wishes ? `\n\n${escapeHtml(order.wishes)}` : '') +
       (username ? '' : `\n\n💬 Напишите клиенту: нажмите на имя выше`);
     const extra = username
@@ -302,6 +319,27 @@ app.post('/api/orders/:id/price', auth, requireMaster, async (req, res) => {
       order.clientId,
       `💰 <b>Мастер оценил вашу тату</b>\n\nСтоимость: ${fmtPrice(totalPrice)}\n` +
         `Предоплата для записи: ${fmtPrice(prepayment)}${slotsLine}`
+    );
+    ok(res, order);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'server_error' });
+  }
+});
+
+// Мастер предлагает время без цены (бесплатная консультация)
+app.post('/api/orders/:id/propose-time', auth, requireMaster, async (req, res) => {
+  try {
+    const slots = Array.isArray(req.body?.slots)
+      ? req.body.slots.filter((s) => typeof s === 'string').slice(0, 10)
+      : [];
+    if (!slots.length)
+      return res.status(400).json({ success: false, error: 'no_slots' });
+    const order = await db.proposeSlots(req.params.id, slots);
+    if (!order) return res.status(404).json({ success: false, error: 'not_found' });
+    sendMessage(
+      order.clientId,
+      `🗓 <b>Мастер предложил время для консультации</b>\n\nВыберите удобный вариант в приложении.`
     );
     ok(res, order);
   } catch (e) {

@@ -3,7 +3,31 @@
  * Константы для заказов
  */
 
-import type { TattooPlacement } from '../types';
+import type { TattooPlacement, ServiceType } from '../types';
+
+// ============================================================================
+// SERVICES
+// ============================================================================
+
+export const SERVICE_LABELS: Record<ServiceType, string> = {
+  tattoo: 'Запись на тату',
+  coverup: 'Перекрытие',
+  correction: 'Коррекция',
+  consultation: 'Консультация',
+};
+
+export const SERVICE_OPTIONS: {
+  id: ServiceType;
+  label: string;
+  desc: string;
+  icon: string;
+  free?: boolean;
+}[] = [
+  { id: 'tattoo', label: 'Запись на тату', desc: 'Анкета · мастер оценит стоимость', icon: 'needle' },
+  { id: 'coverup', label: 'Перекрытие', desc: 'Перекрыть старую тату', icon: 'layers' },
+  { id: 'correction', label: 'Коррекция', desc: 'Обновить или поправить тату', icon: 'edit' },
+  { id: 'consultation', label: 'Консультация', desc: 'Задать вопрос мастеру', icon: 'chat', free: true },
+];
 
 // ============================================================================
 // PLACEMENT OPTIONS

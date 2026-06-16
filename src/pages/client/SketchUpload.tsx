@@ -60,13 +60,20 @@ export const SketchUpload: React.FC = () => {
     navigate('/');
   };
 
+  const isExisting =
+    form.serviceType === 'coverup' || form.serviceType === 'correction';
+
   return (
     <div className="flex-1 flex flex-col">
       <div className="flex-1">
         <FormHeader
-          title="Загрузите эскиз"
-          pageTitle="Эскиз"
-          subtitle="Прикрепите изображение желаемой татуировки"
+          title={isExisting ? 'Фото текущей татуировки' : 'Загрузите эскиз'}
+          pageTitle="Фото"
+          subtitle={
+            isExisting
+              ? 'Загрузите фото татуировки, которую нужно перекрыть или поправить'
+              : 'Прикрепите изображение желаемой татуировки'
+          }
           step={form.currentStep}
           totalSteps={7}
           onBack={handlePrev}

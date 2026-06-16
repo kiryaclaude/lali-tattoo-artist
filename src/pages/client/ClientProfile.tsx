@@ -8,7 +8,11 @@ import { useNav } from '../../hooks';
 import { hideMainButton, hideBackButton, orderService } from '../../services';
 import { CLIENT_ROUTES } from '../../routes';
 import { useNotification, useAppStore } from '../../store';
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
+import {
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_COLORS,
+  SERVICE_LABELS,
+} from '../../constants';
 import { formatPlacement, formatSize, formatTimeAgo } from '../../utils';
 import { Button, LoadingSpinner } from '../../components/ui';
 import type { Order } from '../../types';
@@ -46,7 +50,7 @@ export const ClientProfile: React.FC = () => {
       notify.error(`Достигнут лимит: максимум ${MAX_ACTIVE_ORDERS} активные записи`);
       return;
     }
-    navigate(CLIENT_ROUTES.FORM_SKETCH);
+    navigate(CLIENT_ROUTES.SERVICES);
   };
 
   return (
@@ -93,8 +97,14 @@ export const ClientProfile: React.FC = () => {
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-white truncate">
-                    {formatPlacement(o.placement)} ·{' '}
-                    {formatSize(o.size.height, o.size.width)}
+                    {o.serviceType === 'consultation'
+                      ? 'Консультация'
+                      : o.size
+                      ? `${formatPlacement(o.placement)} · ${formatSize(
+                          o.size.height,
+                          o.size.width
+                        )}`
+                      : SERVICE_LABELS[o.serviceType || 'tattoo']}
                   </p>
                   <p className="text-xs text-muted mt-0.5">
                     {formatTimeAgo(new Date(o.createdAt))}

@@ -73,8 +73,11 @@ export interface OrderFormData {
 // ORDER ENTITY TYPES
 // ============================================================================
 
+export type ServiceType = 'tattoo' | 'coverup' | 'correction' | 'consultation';
+
 export interface Order {
   id: string;
+  serviceType?: ServiceType;
   clientId: string;
   clientName: string;
   clientPhone: string;
@@ -111,6 +114,7 @@ export interface Order {
 // ============================================================================
 
 export interface FormState {
+  serviceType: ServiceType;
   sketch: File | null;
   placement: TattooPlacement | null;
   size: Size | null;

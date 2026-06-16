@@ -17,7 +17,11 @@ import {
   formatSlot,
   compressImageToDataUrl,
 } from '../../utils';
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
+import {
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_COLORS,
+  SERVICE_LABELS,
+} from '../../constants';
 import { CLIENT_ROUTES } from '../../routes';
 import type { Order } from '../../types';
 
@@ -107,6 +111,8 @@ export const ClientOrderDetails: React.FC = () => {
   const isPaying = order.status === 'payment_pending';
   const isConfirmed = order.status === 'confirmed';
   const isClarify = order.status === 'awaiting_price';
+  const isConsult = order.serviceType === 'consultation';
+  const proposedSlots = order.proposedSlots || [];
   const canDelete = ['rejected', 'confirmed', 'cancelled'].includes(order.status);
 
   const handleReply = async () => {
@@ -168,40 +174,55 @@ export const ClientOrderDetails: React.FC = () => {
         </span>
       </div>
 
-      {/* Эскиз */}
-      <div className="w-full aspect-[4/3] rounded-2xl border border-line bg-card-2 overflow-hidden flex items-center justify-center">
-        {sketchIsImg ? (
-          <img
-            src={order.sketchUrl}
-            alt="Эскиз"
-            className="w-full h-full object-contain"
-          />
-        ) : (
-          <span className="text-xs text-hint">Эскиз не приложен</span>
-        )}
+      {/* Тип услуги */}
+      <div className="-mt-2">
+        <span
+          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+          style={{ background: 'rgba(171,189,163,0.3)', color: '#FFFFFF' }}
+        >
+          {SERVICE_LABELS[order.serviceType || 'tattoo']}
+          {isConsult ? ' · бесплатно' : ''}
+        </span>
       </div>
 
-      {/* Параметры */}
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { label: 'Расположение', value: formatPlacement(order.placement) },
-          { label: 'Размер', value: formatSize(order.size.height, order.size.width) },
-          { label: 'Возраст', value: `${order.clientAge} лет` },
-          {
-            label: 'Опыт',
-            value: order.experience?.hasTattoos
-              ? `${order.experience.tattooCount || 1} тату`
-              : 'Первая',
-          },
-        ].map((it) => (
-          <Card key={it.label}>
-            <p className="text-xs font-semibold text-muted uppercase mb-1">
-              {it.label}
-            </p>
-            <p className="text-lg font-bold text-white break-words">{it.value}</p>
-          </Card>
-        ))}
-      </div>
+      {/* Эскиз / фото */}
+      {(sketchIsImg || !isConsult) && (
+        <div className="w-full aspect-[4/3] rounded-2xl border border-line bg-card-2 overflow-hidden flex items-center justify-center">
+          {sketchIsImg ? (
+            <img
+              src={order.sketchUrl}
+              alt="Фото"
+              className="w-full h-full object-contain"
+            />
+          ) : (
+            <span className="text-xs text-hint">Эскиз не приложен</span>
+          )}
+        </div>
+      )}
+
+      {/* Параметры (не для консультации) */}
+      {!isConsult && order.size && (
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: 'Расположение', value: formatPlacement(order.placement) },
+            { label: 'Размер', value: formatSize(order.size.height, order.size.width) },
+            { label: 'Возраст', value: `${order.clientAge ?? '—'} лет` },
+            {
+              label: 'Опыт',
+              value: order.experience?.hasTattoos
+                ? `${order.experience.tattooCount || 1} тату`
+                : 'Первая',
+            },
+          ].map((it) => (
+            <Card key={it.label}>
+              <p className="text-xs font-semibold text-muted uppercase mb-1">
+                {it.label}
+              </p>
+              <p className="text-lg font-bold text-white break-words">{it.value}</p>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Здоровье */}
       {(order.health?.contraindications?.length ||
@@ -238,15 +259,49 @@ export const ClientOrderDetails: React.FC = () => {
         </Card>
       )}
 
-      {/* Пожелания */}
+      {/* Пожелания / вопрос */}
       {order.wishes && (
         <Card>
           <p className="text-xs font-semibold text-muted uppercase mb-2">
-            Ваши пожелания
+            {isConsult ? 'Ваш вопрос' : 'Ваши пожелания'}
           </p>
           <p className="text-white whitespace-pre-wrap break-words">
             {order.wishes}
           </p>
+        </Card>
+      )}
+
+      {/* Выбор времени (когда мастер предложил слоты) */}
+      {proposedSlots.length > 0 && !isConfirmed && (
+        <Card>
+          <p className="text-xs font-semibold text-muted uppercase mb-3">
+            Выберите удобное время
+          </p>
+          <div className="space-y-2">
+            {proposedSlots.map((s) => {
+              const active = order.selectedSlot === s;
+              return (
+                <button
+                  key={s}
+                  disabled={selectingSlot}
+                  onClick={() => handleSelectSlot(s)}
+                  className="w-full text-left rounded-xl px-4 py-3 text-sm font-medium border-2 transition-colors disabled:opacity-60"
+                  style={
+                    active
+                      ? { background: '#ABBDA3', color: '#2F3A2B', borderColor: '#ABBDA3' }
+                      : { background: '#5d5d58', color: '#fff', borderColor: 'transparent' }
+                  }
+                >
+                  {formatSlot(s)}
+                </button>
+              );
+            })}
+          </div>
+          {order.selectedSlot && (
+            <p className="text-xs text-muted mt-3">
+              Время выбрано. {isConsult ? 'Ждите подтверждения мастера.' : 'Осталось оплатить ниже.'}
+            </p>
+          )}
         </Card>
       )}
 
@@ -305,35 +360,8 @@ export const ClientOrderDetails: React.FC = () => {
         </Card>
       )}
 
-      {/* Дата и время сеанса */}
-      {!!(order.proposedSlots && order.proposedSlots.length) && (
-        <Card>
-          <p className="text-xs font-semibold text-muted uppercase mb-3">
-            {order.selectedSlot ? 'Дата и время' : 'Выберите удобное время'}
-          </p>
-          {order.selectedSlot ? (
-            <p className="text-lg font-bold text-brand">
-              {formatSlot(order.selectedSlot)}
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {order.proposedSlots.map((s) => (
-                <button
-                  key={s}
-                  disabled={selectingSlot}
-                  onClick={() => handleSelectSlot(s)}
-                  className="w-full text-left rounded-xl border border-line bg-card px-4 py-3 text-white font-medium hover:bg-card-2 transition-colors disabled:opacity-60"
-                >
-                  {formatSlot(s)}
-                </button>
-              ))}
-            </div>
-          )}
-        </Card>
-      )}
-
-      {/* Загрузка чека / статус оплаты */}
-      {isPriceSet && (
+      {/* Загрузка чека / статус оплаты (не для бесплатной консультации) */}
+      {isPriceSet && hasPrice && (
         <Card>
           <p className="text-xs font-semibold text-muted uppercase mb-3">
             Чек об оплате

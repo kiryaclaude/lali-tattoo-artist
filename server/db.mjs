@@ -60,6 +60,9 @@ export async function initSchema() {
     `ALTER TABLE orders ADD COLUMN IF NOT EXISTS selected_slot TEXT;`
   );
   await pool.query(
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS service_type TEXT DEFAULT 'tattoo';`
+  );
+  await pool.query(
     `CREATE INDEX IF NOT EXISTS idx_orders_client ON orders(client_id);`
   );
   await pool.query(
@@ -72,6 +75,7 @@ function rowToOrder(r) {
   if (!r) return null;
   return {
     id: r.id,
+    serviceType: r.service_type || 'tattoo',
     clientId: r.client_id,
     clientName: r.client_name || '',
     clientPhone: r.client_phone || '',
@@ -113,8 +117,9 @@ export async function createOrder(o) {
   const { rows } = await pool.query(
     `INSERT INTO orders
       (id, client_id, client_name, client_phone, client_age, placement,
-       size_height, size_width, sketch_url, health, experience, wishes, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       size_height, size_width, sketch_url, health, experience, wishes, status,
+       service_type)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
      RETURNING *`,
     [
       o.id,
@@ -122,7 +127,7 @@ export async function createOrder(o) {
       o.clientName || '',
       o.clientPhone || '',
       o.clientAge ?? null,
-      o.placement,
+      o.placement || null,
       o.size?.height ?? null,
       o.size?.width ?? null,
       o.sketchUrl || '',
@@ -130,6 +135,7 @@ export async function createOrder(o) {
       o.experience || {},
       o.wishes || '',
       o.status || 'pending',
+      o.serviceType || 'tattoo',
     ]
   );
   return rowToOrder(rows[0]);
@@ -171,6 +177,17 @@ export async function setOrderPrice(id, totalPrice, prepayment, slots = []) {
        status = 'price_set', updated_at = now()
      WHERE id = $1 RETURNING *`,
     [id, totalPrice, prepayment, JSON.stringify(slots || [])]
+  );
+  return rowToOrder(rows[0]);
+}
+
+/** Мастер предлагает время без цены (для бесплатной консультации). */
+export async function proposeSlots(id, slots = []) {
+  const { rows } = await pool.query(
+    `UPDATE orders SET proposed_slots = $2::jsonb, selected_slot = NULL,
+       status = 'price_set', updated_at = now()
+     WHERE id = $1 RETURNING *`,
+    [id, JSON.stringify(slots || [])]
   );
   return rowToOrder(rows[0]);
 }

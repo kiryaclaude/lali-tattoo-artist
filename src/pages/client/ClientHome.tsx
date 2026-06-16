@@ -43,7 +43,7 @@ export const ClientHome: React.FC = () => {
       return;
     }
     selectionHaptic();
-    navigate(CLIENT_ROUTES.FORM_SKETCH);
+    navigate(CLIENT_ROUTES.SERVICES);
   };
 
   return (

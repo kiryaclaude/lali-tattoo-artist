@@ -5,6 +5,8 @@
 
 export { ClientHome } from './ClientHome';
 export { ClientProfile } from './ClientProfile';
+export { ServiceSelect } from './ServiceSelect';
+export { ConsultForm } from './ConsultForm';
 export { SketchUpload } from './SketchUpload';
 export { PlacementSelect } from './PlacementSelect';
 export { SizeInput } from './SizeInput';

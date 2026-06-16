@@ -15,7 +15,11 @@ import {
   LoadingSpinner,
 } from '../../components/ui';
 import { NumberInput } from '../../components/forms';
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
+import {
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_COLORS,
+  SERVICE_LABELS,
+} from '../../constants';
 import { formatPlacement, formatSize, formatPrice, formatSlot } from '../../utils';
 import { useNav } from '../../hooks';
 import { MASTER_ROUTES } from '../../routes';
@@ -41,6 +45,7 @@ export const MasterOrderDetails: React.FC = () => {
 
   const [feedbackModal, setFeedbackModal] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [timeModal, setTimeModal] = useState(false);
 
   const [sketchErr, setSketchErr] = useState(false);
   const [wishesOpen, setWishesOpen] = useState(false);
@@ -148,6 +153,27 @@ export const MasterOrderDetails: React.FC = () => {
     }
   };
 
+  const handleProposeTime = async () => {
+    if (!slots.length) {
+      notify.error('Добавьте хотя бы один вариант времени');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await orderService.proposeTime(orderId, slots);
+      if (res.success) {
+        notify.success('Время отправлено клиенту');
+        setTimeModal(false);
+        setSlots([]);
+        goBack();
+      }
+    } catch {
+      notify.error('Ошибка при отправке времени');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
@@ -182,6 +208,9 @@ export const MasterOrderDetails: React.FC = () => {
   const wishesLong = wishes.length > WISHES_CLAMP;
   const isPending = order.status === 'pending';
   const isPaying = order.status === 'payment_pending';
+  const isConsult = order.serviceType === 'consultation';
+  const canConfirm =
+    isPaying || (isConsult && order.status === 'price_set' && !!order.selectedSlot);
   const canDelete = ['rejected', 'confirmed', 'cancelled'].includes(order.status);
 
   return (
@@ -213,46 +242,61 @@ export const MasterOrderDetails: React.FC = () => {
         </span>
       </div>
 
-      {/* Эскиз */}
-      <div className="w-full aspect-[4/3] rounded-2xl border border-line bg-card-2 overflow-hidden flex items-center justify-center">
-        {showImg ? (
-          <img
-            src={order.sketchUrl}
-            alt="Эскиз"
-            className="w-full h-full object-contain"
-            onError={() => setSketchErr(true)}
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-2 text-hint">
-            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="text-xs">Эскиз недоступен</span>
-          </div>
-        )}
+      {/* Тип услуги */}
+      <div className="-mt-2">
+        <span
+          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+          style={{ background: 'rgba(171,189,163,0.3)', color: '#FFFFFF' }}
+        >
+          {SERVICE_LABELS[order.serviceType || 'tattoo']}
+          {isConsult ? ' · бесплатно' : ''}
+        </span>
       </div>
 
-      {/* Параметры */}
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { label: 'Возраст', value: `${order.clientAge} лет` },
-          { label: 'Расположение', value: formatPlacement(order.placement) },
-          { label: 'Размер', value: formatSize(order.size.height, order.size.width) },
-          {
-            label: 'Опыт',
-            value: order.experience.hasTattoos
-              ? `${order.experience.tattooCount || 1} тату`
-              : 'Первая',
-          },
-        ].map((item) => (
-          <Card key={item.label}>
-            <p className="text-xs font-semibold text-muted uppercase mb-1">
-              {item.label}
-            </p>
-            <p className="text-lg font-bold text-white break-words">{item.value}</p>
-          </Card>
-        ))}
-      </div>
+      {/* Эскиз / фото (скрываем для консультации без фото) */}
+      {(showImg || !isConsult) && (
+        <div className="w-full aspect-[4/3] rounded-2xl border border-line bg-card-2 overflow-hidden flex items-center justify-center">
+          {showImg ? (
+            <img
+              src={order.sketchUrl}
+              alt="Фото"
+              className="w-full h-full object-contain"
+              onError={() => setSketchErr(true)}
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-2 text-hint">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="text-xs">Эскиз недоступен</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Параметры (для консультации не показываем — анкеты нет) */}
+      {!isConsult && order.size && (
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: 'Возраст', value: `${order.clientAge ?? '—'} лет` },
+            { label: 'Расположение', value: formatPlacement(order.placement) },
+            { label: 'Размер', value: formatSize(order.size.height, order.size.width) },
+            {
+              label: 'Опыт',
+              value: order.experience?.hasTattoos
+                ? `${order.experience.tattooCount || 1} тату`
+                : 'Первая',
+            },
+          ].map((item) => (
+            <Card key={item.label}>
+              <p className="text-xs font-semibold text-muted uppercase mb-1">
+                {item.label}
+              </p>
+              <p className="text-lg font-bold text-white break-words">{item.value}</p>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Здоровье / противопоказания */}
       {(order.health?.contraindications?.length ||
@@ -396,7 +440,16 @@ export const MasterOrderDetails: React.FC = () => {
       )}
 
       {/* Действия */}
-      {isPending ? (
+      {isPending && isConsult ? (
+        <div className="space-y-3">
+          <Button variant="primary" fullWidth onClick={() => setTimeModal(true)}>
+            Предложить время
+          </Button>
+          <Button variant="danger" fullWidth onClick={handleReject}>
+            Отклонить
+          </Button>
+        </div>
+      ) : isPending ? (
         <div className="space-y-3">
           <Button variant="primary" fullWidth onClick={() => setPriceModal(true)}>
             Назначить стоимость
@@ -410,7 +463,7 @@ export const MasterOrderDetails: React.FC = () => {
             </Button>
           </div>
         </div>
-      ) : isPaying ? (
+      ) : canConfirm ? (
         <div className="space-y-3">
           <Button
             variant="primary"
@@ -513,6 +566,62 @@ export const MasterOrderDetails: React.FC = () => {
             Необязательно. Клиент выберет один из предложенных вариантов.
           </p>
         </div>
+      </Modal>
+
+      {/* Модалка «Предложить время» (консультация) */}
+      <Modal
+        isOpen={timeModal}
+        onClose={() => setTimeModal(false)}
+        title="Предложить время"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setTimeModal(false)}>
+              Отменить
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleProposeTime}
+              isLoading={isSubmitting}
+            >
+              Отправить
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-muted mb-3">
+          Добавьте варианты времени — клиент выберет удобный. Консультация
+          бесплатная, оплата не нужна.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="datetime-local"
+            value={slotInput}
+            onChange={(e) => setSlotInput(e.target.value)}
+            style={{ colorScheme: 'dark' }}
+            className="flex-1 min-w-0 bg-card border border-line rounded-xl px-3 py-2.5 text-white text-sm"
+          />
+          <Button variant="secondary" onClick={addSlot}>
+            Добавить
+          </Button>
+        </div>
+        {slots.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {slots.map((s) => (
+              <div
+                key={s}
+                className="flex items-center justify-between bg-card rounded-xl px-3 py-2"
+              >
+                <span className="text-sm text-white">{formatSlot(s)}</span>
+                <button
+                  onClick={() => removeSlot(s)}
+                  className="text-red-400 text-xs font-medium"
+                >
+                  Убрать
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </Modal>
 
       {/* Модалка уточнения */}

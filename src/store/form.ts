@@ -17,6 +17,7 @@ const STORAGE_KEY = 'tattoo_form_state';
 
 // Initial state
 const initialState: FormState = {
+  serviceType: 'tattoo',
   sketch: null,
   placement: null,
   size: null,
@@ -40,6 +41,9 @@ const initialState: FormState = {
 // ============================================================================
 
 interface FormStoreState extends FormState {
+  // Service
+  setServiceType: (type: FormState['serviceType']) => void;
+
   // Sketch
   setSketch: (file: File | null) => void;
 
@@ -89,6 +93,8 @@ export const useFormStore = create<FormStoreState>()(
   persist(
     (set, get) => ({
       ...initialState,
+
+      setServiceType: (type) => set({ serviceType: type }),
 
       // ====================================================================
       // SKETCH
@@ -278,6 +284,7 @@ export const useFormStore = create<FormStoreState>()(
       // Кастомная функция для сохранения только необходимых полей
       // (не сохраняем состояние, которое хранится не в форме)
       partialize: (state) => ({
+        serviceType: state.serviceType,
         sketch: state.sketch,
         placement: state.placement,
         size: state.size,

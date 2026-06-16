@@ -77,6 +77,14 @@ class OrderService {
     return apiPost<Order>(`/orders/${orderId}/select-slot`, { slot });
   }
 
+  /** Мастер предлагает время без цены (бесплатная консультация). */
+  async proposeTime(
+    orderId: string,
+    slots: string[]
+  ): Promise<ApiResponse<Order>> {
+    return apiPost<Order>(`/orders/${orderId}/propose-time`, { slots });
+  }
+
   /** Запросить уточнение у клиента. */
   async requestClarification(
     orderId: string,

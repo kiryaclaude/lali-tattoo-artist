@@ -8,7 +8,11 @@ import { useMasterStore, useNotification } from '../../store';
 import { orderService } from '../../services';
 import { useNav } from '../../hooks';
 import { LoadingSpinner, Modal, Button, Input } from '../../components/ui';
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../../constants';
+import {
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_COLORS,
+  SERVICE_LABELS,
+} from '../../constants';
 import { formatTimeAgo, formatSize, formatPlacement } from '../../utils';
 import { MASTER_ROUTES } from '../../routes';
 
@@ -217,8 +221,15 @@ export const MasterDashboard: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-sm text-muted mt-1 truncate">
-                    📍 {formatPlacement(order.placement)} ·{' '}
-                    {formatSize(order.size.height, order.size.width)}
+                    {SERVICE_LABELS[order.serviceType || 'tattoo']}
+                    {order.serviceType === 'consultation'
+                      ? ' · бесплатно'
+                      : order.size
+                      ? ` · ${formatPlacement(order.placement)} · ${formatSize(
+                          order.size.height,
+                          order.size.width
+                        )}`
+                      : ''}
                   </p>
                   {order.wishes && (
                     <p className="text-sm text-hint mt-1 line-clamp-2">

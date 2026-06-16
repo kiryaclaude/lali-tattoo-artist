@@ -51,6 +51,8 @@ function resolveUserRole(telegramId?: number): UserRole {
 import {
   ClientHome,
   ClientProfile,
+  ServiceSelect,
+  ConsultForm,
   SketchUpload,
   PlacementSelect,
   SizeInput,
@@ -122,6 +124,22 @@ const App: React.FC = () => {
               element={
                 <ClientLayout>
                   <ClientProfile />
+                </ClientLayout>
+              }
+            />
+            <Route
+              path={CLIENT_ROUTES.SERVICES}
+              element={
+                <ClientLayout>
+                  <ServiceSelect />
+                </ClientLayout>
+              }
+            />
+            <Route
+              path={CLIENT_ROUTES.CONSULT}
+              element={
+                <ClientLayout>
+                  <ConsultForm />
                 </ClientLayout>
               }
             />

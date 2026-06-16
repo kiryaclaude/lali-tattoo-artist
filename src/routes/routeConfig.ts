@@ -11,6 +11,8 @@
 export const CLIENT_ROUTES = {
   HOME: '/',
   PROFILE: '/profile',
+  SERVICES: '/services',
+  CONSULT: '/consult',
   FORM_SKETCH: '/form/sketch',
   FORM_PLACEMENT: '/form/placement',
   FORM_SIZE: '/form/size',

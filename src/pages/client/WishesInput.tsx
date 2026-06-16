@@ -37,6 +37,7 @@ export const WishesInput: React.FC = () => {
 
       // clientId и проверку лимита делает сервер по Telegram initData
       const orderData = {
+        serviceType: form.serviceType,
         clientName: form.clientName,
         clientPhone: form.clientPhone,
         clientAge: form.clientAge!,
