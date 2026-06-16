@@ -29,6 +29,11 @@ const isMaster = (id) => MASTER_IDS.includes(String(id));
 const newId = () =>
   `order_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 const fmtPrice = (p) => (p ? `${p.amount.toLocaleString('ru-RU')} ₽` : '');
+const escapeHtml = (s) =>
+  String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 const fmtSlot = (iso) => {
   try {
     return new Intl.DateTimeFormat('ru-RU', {
@@ -126,13 +131,26 @@ app.post('/api/orders', auth, async (req, res) => {
       username: req.user.username,
     });
 
-    // Уведомляем мастера(ов)
+    // Уведомляем мастера(ов) — с возможностью написать клиенту
+    const username = req.user.username;
+    const name = escapeHtml(order.clientName || 'Клиент');
+    const mention = `<a href="tg://user?id=${clientId}">${name}</a>`;
     const note =
       `🆕 <b>Новая заявка</b>\n` +
-      `${order.clientName || 'Клиент'} · ${order.placement} · ` +
+      `${mention} · ${escapeHtml(order.placement)} · ` +
       `${order.size.width}×${order.size.height} см` +
-      (order.wishes ? `\n\n${order.wishes}` : '');
-    for (const mid of MASTER_IDS) sendMessage(mid, note);
+      (order.wishes ? `\n\n${escapeHtml(order.wishes)}` : '') +
+      (username ? '' : `\n\n💬 Напишите клиенту: нажмите на имя выше`);
+    const extra = username
+      ? {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '💬 Написать клиенту', url: `https://t.me/${username}` }],
+            ],
+          },
+        }
+      : {};
+    for (const mid of MASTER_IDS) sendMessage(mid, note, extra);
 
     ok(res, order);
   } catch (e) {
