@@ -13,6 +13,7 @@ import {
 } from '../../services';
 import { CLIENT_ROUTES } from '../../routes';
 import { useNotification } from '../../store';
+import { BRAND } from '../../config/brand';
 
 const MAX_ACTIVE_ORDERS = 3;
 
@@ -52,8 +53,8 @@ export const ClientHome: React.FC = () => {
       <div className="pt-4">
         <div className="rounded-3xl bg-white px-5 py-4">
           <img
-            src="/lali-logo-mark.jpg"
-            alt="LALI — tattoo artist"
+            src={BRAND.logo}
+            alt={`${BRAND.name} — ${BRAND.tagline}`}
             className="w-full h-auto"
           />
         </div>

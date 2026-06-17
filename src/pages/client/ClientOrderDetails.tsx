@@ -23,6 +23,7 @@ import {
   SERVICE_LABELS,
 } from '../../constants';
 import { CLIENT_ROUTES } from '../../routes';
+import { BRAND } from '../../config/brand';
 import type { Order } from '../../types';
 
 export const ClientOrderDetails: React.FC = () => {
@@ -354,9 +355,11 @@ export const ClientOrderDetails: React.FC = () => {
               Реквизиты для оплаты
             </p>
             <p className="text-lg font-bold text-white tracking-wider tabular-nums">
-              2200 7013 4217 5137
+              {BRAND.payment.card}
             </p>
-            <p className="text-sm text-muted mt-1">Лолита П · Т-банк</p>
+            <p className="text-sm text-muted mt-1">
+              {BRAND.payment.holder} · {BRAND.payment.bank}
+            </p>
             <p className="text-xs text-hint mt-2">
               Переведите предоплату и прикрепите чек ниже.
             </p>
