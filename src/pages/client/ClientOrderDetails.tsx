@@ -348,13 +348,17 @@ export const ClientOrderDetails: React.FC = () => {
             )}
           </div>
 
-          {/* Реквизиты (пока пустые — мастер сообщит) */}
+          {/* Реквизиты для оплаты */}
           <div className="rounded-xl bg-card-2 border border-line p-4">
-            <p className="text-xs font-semibold text-muted uppercase mb-1">
+            <p className="text-xs font-semibold text-muted uppercase mb-2">
               Реквизиты для оплаты
             </p>
-            <p className="text-sm text-hint">
-              Реквизиты уточняйте у мастера.
+            <p className="text-lg font-bold text-white tracking-wider tabular-nums">
+              2200 7013 4217 5137
+            </p>
+            <p className="text-sm text-muted mt-1">Лолита П · Т-банк</p>
+            <p className="text-xs text-hint mt-2">
+              Переведите предоплату и прикрепите чек ниже.
             </p>
           </div>
         </Card>

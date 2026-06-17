@@ -89,6 +89,18 @@ export const MasterOrderDetails: React.FC = () => {
   const removeSlot = (iso: string) =>
     setSlots((prev) => prev.filter((s) => s !== iso));
 
+  // Подхватываем время из поля, даже если не нажали «Добавить»
+  const collectSlots = (): string[] => {
+    if (!slotInput) return slots;
+    try {
+      const iso = new Date(slotInput).toISOString();
+      if (Number.isNaN(Date.parse(iso))) return slots;
+      return slots.includes(iso) ? slots : [...slots, iso].sort();
+    } catch {
+      return slots;
+    }
+  };
+
   const handleSetPrice = async () => {
     if (!priceAmount || priceAmount <= 0) {
       notify.error('Укажите корректную цену');
@@ -100,7 +112,7 @@ export const MasterOrderDetails: React.FC = () => {
       const res = await orderService.setOrderPrice(
         orderId,
         { amount: priceAmount, currency: 'RUB' },
-        slots
+        collectSlots()
       );
       if (res.success) {
         updateOrderPrice(orderId, { amount: priceAmount, currency: 'RUB' }, prepayment);
@@ -154,13 +166,14 @@ export const MasterOrderDetails: React.FC = () => {
   };
 
   const handleProposeTime = async () => {
-    if (!slots.length) {
+    const finalSlots = collectSlots();
+    if (!finalSlots.length) {
       notify.error('Добавьте хотя бы один вариант времени');
       return;
     }
     setIsSubmitting(true);
     try {
-      const res = await orderService.proposeTime(orderId, slots);
+      const res = await orderService.proposeTime(orderId, finalSlots);
       if (res.success) {
         notify.success('Время отправлено клиенту');
         setTimeModal(false);
