@@ -8,6 +8,3 @@ export * from './types_common';
 
 // Order types
 export * from './types_order';
-
-// Chat types
-export * from './types_chat';
