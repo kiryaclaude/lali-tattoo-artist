@@ -14,6 +14,7 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY server ./server
+COPY shared ./shared
 ENV PORT=3000
 EXPOSE 3000
 CMD ["node", "server/index.mjs"]

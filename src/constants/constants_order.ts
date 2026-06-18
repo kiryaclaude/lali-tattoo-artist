@@ -5,16 +5,12 @@
 
 import type { TattooPlacement, ServiceType } from '../types';
 
+// Единый источник лейблов статусов/услуг — общий с бэкендом (shared/domain.js)
+export { SERVICE_LABELS, ORDER_STATUS_LABELS } from '../../shared/domain.js';
+
 // ============================================================================
 // SERVICES
 // ============================================================================
-
-export const SERVICE_LABELS: Record<ServiceType, string> = {
-  tattoo: 'Запись на тату',
-  coverup: 'Перекрытие',
-  correction: 'Коррекция',
-  consultation: 'Консультация',
-};
 
 export const SERVICE_OPTIONS: {
   id: ServiceType;
@@ -64,19 +60,7 @@ export const CONTRAINDICATION_OPTIONS = [
   'Нет противопоказаний',
 ] as const;
 
-// ============================================================================
-// ORDER STATUS LABELS
-// ============================================================================
-
-export const ORDER_STATUS_LABELS: Record<string, string> = {
-  pending: 'Ожидает',
-  awaiting_price: 'Запрашивает уточнение',
-  price_set: 'Согласовано',
-  payment_pending: 'Ожидание оплаты',
-  confirmed: 'Подтверждено',
-  rejected: 'Отклонено',
-  cancelled: 'Отменено',
-};
+// ORDER_STATUS_LABELS — см. ре-экспорт из shared/domain.js в начале файла.
 
 // ============================================================================
 // ORDER STATUS COLORS

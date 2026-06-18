@@ -6,6 +6,7 @@
 import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { SERVICE_LABELS, SERVICES } from '../shared/domain.js';
 import {
   verifyInitData,
   sendMessage,
@@ -29,12 +30,6 @@ const isMaster = (id) => MASTER_IDS.includes(String(id));
 const newId = () =>
   `order_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 const fmtPrice = (p) => (p ? `${p.amount.toLocaleString('ru-RU')} ₽` : '');
-const SERVICE_LABELS = {
-  tattoo: 'Запись на тату',
-  coverup: 'Перекрытие',
-  correction: 'Коррекция',
-  consultation: 'Консультация',
-};
 
 // Адрес студии (заполнить позже через переменную окружения STUDIO_ADDRESS)
 const STUDIO_ADDRESS = (process.env.STUDIO_ADDRESS || '').trim();
@@ -146,8 +141,7 @@ app.post('/api/orders', auth, async (req, res) => {
     }
 
     const b = req.body || {};
-    const allowedServices = ['tattoo', 'coverup', 'correction', 'consultation'];
-    const serviceType = allowedServices.includes(b.serviceType)
+    const serviceType = SERVICES.includes(b.serviceType)
       ? b.serviceType
       : 'tattoo';
     const order = await db.createOrder({
