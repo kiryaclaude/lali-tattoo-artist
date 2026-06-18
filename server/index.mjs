@@ -9,7 +9,6 @@ import { dirname, join } from 'node:path';
 import { SERVICE_LABELS, SERVICES } from '../shared/domain.js';
 import { initStorage, saveDataUrl, getStorageDir } from './storage.mjs';
 import {
-  verifyInitData,
   sendMessage,
   hasBotToken,
   sendWelcome,
@@ -17,99 +16,25 @@ import {
   WEBHOOK_SECRET,
 } from './telegram.mjs';
 import * as db from './db.mjs';
+import {
+  MASTER_IDS,
+  isMaster,
+  newId,
+  ok,
+  escapeHtml,
+  fmtPrice,
+  fmtSlot,
+  auth,
+  requireMaster,
+} from './lib.mjs';
+import { STUDIO_ADDRESS, MEMO_TEXT, CONTRA_TEXT } from './content.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = join(__dirname, '..', 'dist');
 const PORT = Number(process.env.PORT) || 3000;
 
-const MASTER_IDS = (process.env.MASTER_TELEGRAM_IDS || '628854840')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-
-const isMaster = (id) => MASTER_IDS.includes(String(id));
-const newId = () =>
-  `order_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const fmtPrice = (p) => (p ? `${p.amount.toLocaleString('ru-RU')} ₽` : '');
-
-// Адрес студии (заполнить позже через переменную окружения STUDIO_ADDRESS)
-const STUDIO_ADDRESS = (process.env.STUDIO_ADDRESS || '').trim();
-
-const MEMO_TEXT =
-  `📋 <b>Памятка перед сеансом</b>\n\n` +
-  `🍽 <b>Питание и сон:</b> поспите 7–8 часов и хорошо поешьте перед выходом — это снижает головокружение и повышает болевой порог.\n\n` +
-  `🧴 <b>Уход за кожей:</b> за 3–7 дней начните увлажнять зону тату кремом. Не загорайте и не ходите в солярий. Побрить участок можно самим или довериться мастеру.\n\n` +
-  `🚿 <b>Гигиена:</b> примите душ перед сеансом, без жирных лосьонов и масел.\n\n` +
-  `👕 <b>Одежда:</b> свободная и удобная, которую не жалко испачкать краской, с доступом к зоне тату.\n\n` +
-  `💊 <b>Медицина:</b> не принимайте аспирин и другие кроворазжижающие препараты.\n\n` +
-  `🎒 <b>С собой:</b> паспорт, вода, сладкий перекус (шоколад), можно наушники.\n\n` +
-  `🚫 <b>Нельзя:</b>\n• приходить голодным — возможны обмороки\n• алкоголь и кофе — повышают кровоточивость\n• спорт за день до сеанса`;
-
-const CONTRA_TEXT =
-  `⚠️ <b>Противопоказания</b>\n\n` +
-  `<b>Абсолютные (полный запрет):</b>\n` +
-  `• Заболевания крови — гемофилия, лейкоз\n` +
-  `• Сахарный диабет в стадии декомпенсации\n` +
-  `• Онкология — злокачественные новообразования\n` +
-  `• Иммунодефицит — ВИЧ, СПИД, тяжёлые инфекции\n` +
-  `• Эпилепсия и тяжёлые психические расстройства\n` +
-  `• Тяжёлая сердечная недостаточность\n` +
-  `• Склонность к келоидным рубцам, псориаз, экзема\n\n` +
-  `<b>Временные (нужно подождать):</b>\n` +
-  `• ОРВИ, грипп, COVID-19, высокая температура\n` +
-  `• Свежие шрамы, акне, герпес, ожоги в зоне тату\n` +
-  `• Беременность и лактация\n` +
-  `• Аллергия, алкогольное/наркотическое опьянение\n` +
-  `• Приём кроворазжижающих препаратов (аспирин и т.п.)\n` +
-  `• Недавние операции — нужно восстановиться\n\n` +
-  `Если что-то из списка про вас — сообщите мастеру до сеанса.`;
-const escapeHtml = (s) =>
-  String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-const fmtSlot = (iso) => {
-  try {
-    return new Intl.DateTimeFormat('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-};
-
 const app = express();
 app.use(express.json({ limit: '6mb' })); // запас под изображения (эскиз/чек)
-
-// ---- Auth: читаем Telegram initData из заголовка ----
-function auth(req, res, next) {
-  const initData = req.get('X-Telegram-Init-Data') || '';
-  let user = verifyInitData(initData);
-
-  // Dev-режим без токена: принимаем id из заголовка для локального теста
-  if (!user && !hasBotToken()) {
-    const devId = req.get('X-Dev-User-Id');
-    if (devId) user = { id: Number(devId) || devId, first_name: 'Dev' };
-  }
-
-  if (!user || !user.id) {
-    return res.status(401).json({ success: false, error: 'unauthorized' });
-  }
-  req.user = user;
-  next();
-}
-
-function requireMaster(req, res, next) {
-  if (!isMaster(req.user.id)) {
-    return res.status(403).json({ success: false, error: 'forbidden' });
-  }
-  next();
-}
-
-const ok = (res, data) => res.json({ success: true, data });
 
 // ---- Health ----
 app.get('/api/health', async (_req, res) => {
