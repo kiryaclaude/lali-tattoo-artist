@@ -7,6 +7,7 @@ import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { SERVICE_LABELS, SERVICES } from '../shared/domain.js';
+import { initStorage, saveDataUrl, getStorageDir } from './storage.mjs';
 import {
   verifyInitData,
   sendMessage,
@@ -144,6 +145,7 @@ app.post('/api/orders', auth, async (req, res) => {
     const serviceType = SERVICES.includes(b.serviceType)
       ? b.serviceType
       : 'tattoo';
+    const sketchUrl = await saveDataUrl(b.sketchUrl, 'sketch');
     const order = await db.createOrder({
       id: newId(),
       clientId,
@@ -155,7 +157,7 @@ app.post('/api/orders', auth, async (req, res) => {
       clientAge: b.clientAge,
       placement: b.placement,
       size: b.size,
-      sketchUrl: b.sketchUrl || '',
+      sketchUrl,
       health: b.health || {},
       experience: b.experience || {},
       wishes: b.wishes || '',
@@ -248,7 +250,8 @@ app.post('/api/orders/:id/receipt', auth, async (req, res) => {
     if (!dataUrl || typeof dataUrl !== 'string') {
       return res.status(400).json({ success: false, error: 'no_file' });
     }
-    const updated = await db.setReceipt(req.params.id, dataUrl);
+    const stored = await saveDataUrl(dataUrl, 'receipt');
+    const updated = await db.setReceipt(req.params.id, stored);
     const note =
       `🧾 <b>Клиент оплатил</b>\n${updated.clientName || 'Клиент'} прислал чек по заявке ` +
       `${updated.placement} · ${updated.size.width}×${updated.size.height} см`;
@@ -500,11 +503,16 @@ app.post('/api/tg/webhook', (req, res) => {
 });
 
 // ============================ STATIC ============================
+// Загруженные изображения (эскизы, чеки) — с диска/Volume.
+app.use(
+  '/uploads',
+  express.static(getStorageDir(), { maxAge: '365d', immutable: true })
+);
 app.use(express.static(DIST));
 app.get('*', (_req, res) => res.sendFile(join(DIST, 'index.html')));
 
 // ============================ START ============================
-db.initSchema()
+Promise.all([db.initSchema(), initStorage()])
   .then(() => {
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server listening on 0.0.0.0:${PORT} (bot: ${hasBotToken()})`);

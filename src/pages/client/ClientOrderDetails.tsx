@@ -106,7 +106,7 @@ export const ClientOrderDetails: React.FC = () => {
     );
   }
 
-  const sketchIsImg = !!order.sketchUrl && /^(https?:|data:)/.test(order.sketchUrl);
+  const sketchIsImg = !!order.sketchUrl && /^(https?:|data:|\/)/.test(order.sketchUrl);
   const hasPrice = !!order.totalPrice;
   const isPriceSet = order.status === 'price_set';
   const isPaying = order.status === 'payment_pending';

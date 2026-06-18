@@ -247,6 +247,12 @@ npm run dev -- --port 3001
 `STUDIO_ADDRESS`. На Railway `DATABASE_URL` подключается через Variable Reference
 `${{Postgres.DATABASE_URL}}`, домен берётся из `RAILWAY_PUBLIC_DOMAIN`.
 
+### Хранилище изображений
+Эскизы и чеки хранятся **файлами**, а не в БД. На Railway добавьте сервису
+**Volume с mount path `/data`** (Settings → Volumes) — файлы переживут редеплой,
+БД останется лёгкой. Картинки отдаются по `/uploads/<name>`. Для CDN позже легко
+заменить `server/storage.mjs` на S3/R2 (это единственный файл хранилища).
+
 ## 📄 License
 
 MIT

@@ -216,7 +216,7 @@ export const MasterOrderDetails: React.FC = () => {
     }
   };
 
-  const showImg = !!order.sketchUrl && !sketchErr && /^(https?:|data:)/.test(order.sketchUrl);
+  const showImg = !!order.sketchUrl && !sketchErr && /^(https?:|data:|\/)/.test(order.sketchUrl);
   const wishes = order.wishes || '';
   const wishesLong = wishes.length > WISHES_CLAMP;
   const isPending = order.status === 'pending';
