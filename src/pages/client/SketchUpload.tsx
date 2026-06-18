@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { useForm } from '../../hooks';
 import { FormHeader, FormFooter } from '../../components/common';
+import { TOTAL_STEPS } from '../../config/flow.config';
 import { FileUpload } from '../../components/forms';
 import { useNav } from '../../hooks';
 import { getNextFormStepPath } from '../../routes';
@@ -54,7 +55,7 @@ export const SketchUpload: React.FC = () => {
               : 'Прикрепите изображение желаемой татуировки'
           }
           step={form.currentStep}
-          totalSteps={7}
+          totalSteps={TOTAL_STEPS}
           onBack={handlePrev}
         />
 

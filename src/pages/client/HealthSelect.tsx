@@ -6,6 +6,7 @@
 import React from 'react';
 import { useForm } from '../../hooks';
 import { FormHeader, FormFooter } from '../../components/common';
+import { getStep, TOTAL_STEPS } from '../../config/flow.config';
 import { CheckboxGroup, Input } from '../../components/forms';
 import { useNav } from '../../hooks';
 import { getNextFormStepPath, getPrevFormStepPath } from '../../routes';
@@ -38,11 +39,11 @@ export const HealthSelect: React.FC = () => {
     <div className="flex-1 flex flex-col">
       <div className="flex-1 space-y-6">
         <FormHeader
-          title="Есть ли противопоказания?"
-          pageTitle="Здоровье"
-          subtitle="Выберите всё, что относится к вам"
+          title={getStep('health').title}
+          pageTitle={getStep('health').pageTitle}
+          subtitle={getStep('health').subtitle}
           step={form.currentStep}
-          totalSteps={7}
+          totalSteps={TOTAL_STEPS}
           onBack={handlePrev}
         />
 

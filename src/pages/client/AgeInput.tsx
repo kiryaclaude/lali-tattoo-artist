@@ -7,6 +7,7 @@
 import React from 'react';
 import { useForm } from '../../hooks';
 import { FormHeader, FormFooter } from '../../components/common';
+import { getStep, TOTAL_STEPS } from '../../config/flow.config';
 import { NumberInput, Input } from '../../components/forms';
 import { useNav } from '../../hooks';
 import { getNextFormStepPath, getPrevFormStepPath } from '../../routes';
@@ -44,10 +45,10 @@ export const AgeInput: React.FC = () => {
     <div className="flex-1 flex flex-col">
       <div className="flex-1 space-y-6">
         <FormHeader
-          title="Сколько вам лет?"
-          pageTitle="Возраст"
+          title={getStep('age').title}
+          pageTitle={getStep('age').pageTitle}
           step={form.currentStep}
-          totalSteps={7}
+          totalSteps={TOTAL_STEPS}
           onBack={handlePrev}
         />
 

@@ -6,6 +6,7 @@
 import React from 'react';
 import { useForm } from '../../hooks';
 import { FormHeader, FormFooter } from '../../components/common';
+import { getStep, TOTAL_STEPS } from '../../config/flow.config';
 import { NumberInput } from '../../components/forms';
 import { useNav } from '../../hooks';
 import { getNextFormStepPath, getPrevFormStepPath } from '../../routes';
@@ -63,11 +64,11 @@ export const SizeInput: React.FC = () => {
     <div className="flex-1 flex flex-col">
       <div className="flex-1 space-y-6">
         <FormHeader
-          title="Укажите примерный размер"
-          pageTitle="Размер"
-          subtitle="Если не знаете точный размер, укажите приблизительно."
+          title={getStep('size').title}
+          pageTitle={getStep('size').pageTitle}
+          subtitle={getStep('size').subtitle}
           step={form.currentStep}
-          totalSteps={7}
+          totalSteps={TOTAL_STEPS}
           onBack={handlePrev}
         />
 

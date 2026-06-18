@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { useForm } from '../../hooks';
 import { FormHeader, FormFooter } from '../../components/common';
+import { getStep, TOTAL_STEPS } from '../../config/flow.config';
 import { Input, Card } from '../../components/ui';
 import { useNav } from '../../hooks';
 import { getPrevFormStepPath, CLIENT_ROUTES } from '../../routes';
@@ -88,11 +89,11 @@ export const WishesInput: React.FC = () => {
     <div className="flex-1 flex flex-col">
       <div className="flex-1 space-y-6">
         <FormHeader
-          title="Дополнительная информация"
-          pageTitle="Пожелания"
-          subtitle="Необязательно, но поможет мастеру лучше понять ваш проект"
+          title={getStep('wishes').title}
+          pageTitle={getStep('wishes').pageTitle}
+          subtitle={getStep('wishes').subtitle}
           step={form.currentStep}
-          totalSteps={7}
+          totalSteps={TOTAL_STEPS}
           onBack={handlePrev}
         />
 

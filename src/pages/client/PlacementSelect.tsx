@@ -6,6 +6,7 @@
 import React from 'react';
 import { useForm } from '../../hooks';
 import { FormHeader, FormFooter } from '../../components/common';
+import { getStep, TOTAL_STEPS } from '../../config/flow.config';
 import { SegmentedControl } from '../../components/forms';
 import { useNav } from '../../hooks';
 import { getNextFormStepPath, getPrevFormStepPath } from '../../routes';
@@ -47,10 +48,10 @@ export const PlacementSelect: React.FC = () => {
     <div className="flex-1 flex flex-col">
       <div className="flex-1">
         <FormHeader
-          title="Где будет располагаться татуировка?"
-          pageTitle="Расположение"
+          title={getStep('placement').title}
+          pageTitle={getStep('placement').pageTitle}
           step={form.currentStep}
-          totalSteps={7}
+          totalSteps={TOTAL_STEPS}
           onBack={handlePrev}
         />
 
