@@ -223,6 +223,30 @@ npm run dev -- --port 3001
 - Убедитесь, что используете Telegram приложение
 - На обычном браузере используйте DevTools для симуляции
 
+## 🧩 Новый клиент из шаблона (ребрендинг)
+
+Чтобы запустить мини-апп под другого клиента/нишу, меняются **только эти точки**:
+
+| Что | Где |
+|---|---|
+| Имя, лого, реквизиты оплаты, id админов | `src/config/brand.ts` |
+| Логотип-картинка | `public/` (путь указать в `brand.ts`) |
+| Палитра и шрифты | `tailwind.config.js` (токены) + `src/styles/index.css` (`.surface-*`) |
+| Услуги, статусы и их лейблы | `shared/domain.js` (общий для фронта и бэка) |
+| Шаги анкеты, расположения, противопоказания | `src/constants/constants_order.ts` |
+| Тексты бота (памятка, противопоказания, приветствие) | `server/telegram.mjs`, `server/index.mjs` |
+| Секреты и адрес студии | переменные окружения (см. `.env.example`) |
+
+Движок переиспользуем: Telegram-авторизация (initData HMAC), поток заявки
+(оценка → время → оплата → подтверждение), уведомления, рассылка, роли по
+`MASTER_TELEGRAM_IDS`.
+
+## ⚙️ Переменные окружения
+
+См. `.env.example`. Ключевые: `BOT_TOKEN`, `DATABASE_URL`, `MASTER_TELEGRAM_IDS`,
+`STUDIO_ADDRESS`. На Railway `DATABASE_URL` подключается через Variable Reference
+`${{Postgres.DATABASE_URL}}`, домен берётся из `RAILWAY_PUBLIC_DOMAIN`.
+
 ## 📄 License
 
 MIT
